@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import * as examService from '../api/examService';
+import ExamQuestions from './ExamQuestions';
 
 const StudentPortal = () => {
   const [examId, setExamId] = useState('');
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showQuestions, setShowQuestions] = useState(false);
 
   // פונקציה אסינכרונית לטיפול בשליחת הטופס ומשיכת המידע
   const handleFetchExam = async (e) => {
@@ -15,6 +17,7 @@ const StudentPortal = () => {
     setLoading(true);
     setError('');
     setExam(null);
+    setShowQuestions(false);
 
     try {
       // קריאה לפונקציית ה-API המדומה (Mock)
@@ -27,6 +30,10 @@ const StudentPortal = () => {
       setLoading(false);
     }
   };
+
+  if (showQuestions && exam) {
+    return <ExamQuestions exam={exam} onBack={() => setShowQuestions(false)} />;
+  }
 
   return (
     <div className="container mt-4">
@@ -56,7 +63,12 @@ const StudentPortal = () => {
             <div className="mt-4 p-4 border rounded bg-light">
               <h3>Ready to start: {exam.title}</h3>
               <p className="lead">This exam contains {exam.questions.length} questions.</p>
-              <button className="btn btn-primary btn-lg w-100">Begin Now</button>
+              <button 
+                className="btn btn-primary btn-lg w-100"
+                onClick={() => setShowQuestions(true)}
+              >
+                Begin Now
+              </button>
             </div>
           )}
         </div>

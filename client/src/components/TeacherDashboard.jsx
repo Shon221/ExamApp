@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import * as examService from '../api/examService';
+import ExamQuestions from './ExamQuestions';
 
 const TeacherDashboard = () => {
   // מערך לאחסון כל המבחנים שיחזרו מהשרת
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedExam, setSelectedExam] = useState(null);
 
   // Hook שמאפשר להריץ קוד מיד כשהקומפוננטה עולה למסך (Mounting)
   useEffect(() => {
@@ -24,6 +26,10 @@ const TeacherDashboard = () => {
 
     fetchExams();
   }, []);
+
+  if (selectedExam) {
+    return <ExamQuestions exam={selectedExam} onBack={() => setSelectedExam(null)} />;
+  }
 
   return (
     <div className="container mt-4">
@@ -48,6 +54,12 @@ const TeacherDashboard = () => {
                     <small className="text-muted">ID: {exam.id} | {exam.questions.length} Questions</small>
                   </div>
                   <div>
+                    <button 
+                      className="btn btn-outline-info btn-sm me-2"
+                      onClick={() => setSelectedExam(exam)}
+                    >
+                      View Questions
+                    </button>
                     <button className="btn btn-outline-info btn-sm me-2">View Results</button>
                     <button className="btn btn-outline-danger btn-sm">Delete</button>
                   </div>
