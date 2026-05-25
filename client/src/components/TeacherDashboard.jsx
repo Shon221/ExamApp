@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as examService from '../api/examService';
-import ExamQuestions from './ExamQuestions';
+import ExamQuestions from './teacher/ExamQuestions';
 
 const TeacherDashboard = () => {
   // מערך לאחסון כל המבחנים שיחזרו מהשרת
@@ -54,7 +54,7 @@ const TeacherDashboard = () => {
                     <small className="text-muted">ID: {exam.id} | {exam.questions.length} Questions</small>
                   </div>
                   <div>
-                    <button 
+                    <button
                       className="btn btn-outline-info btn-sm me-2"
                       onClick={() => setSelectedExam(exam)}
                     >

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as examService from '../api/examService';
-import ExamQuestions from './ExamQuestions';
+import ExamQuestions from './teacher/ExamQuestions';
 
 const StudentPortal = () => {
   const [examId, setExamId] = useState('');
@@ -63,7 +63,7 @@ const StudentPortal = () => {
             <div className="mt-4 p-4 border rounded bg-light">
               <h3>Ready to start: {exam.title}</h3>
               <p className="lead">This exam contains {exam.questions.length} questions.</p>
-              <button 
+              <button
                 className="btn btn-primary btn-lg w-100"
                 onClick={() => setShowQuestions(true)}
               >
