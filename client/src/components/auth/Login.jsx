@@ -71,10 +71,10 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div className="auth-container">
       <form className="auth-form" onSubmit={handleSubmit}>
-        <h2>ברוכים הבאים חזרה</h2>
+        <h2>Login</h2>
 
         <div className="form-group">
-          <label htmlFor="email">דוא"ל</label>
+          <label htmlFor="email">Email address</label>
           <input
             id="email"
             type="email"
@@ -104,7 +104,7 @@ const Login = ({ onLoginSuccess }) => {
         </div>
 
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'טוען...' : 'התחברות'}
+          {isLoading ? 'טוען...' : 'Login'}
         </button>
       </form>
     </div>
