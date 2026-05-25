@@ -5,7 +5,7 @@ import loggerService from '../../services/LoggerService.js';
 import './Auth.css';
 
 // קומפוננטת התחברות - מטפלת בטופס התחברות וקישור ל-AuthService
-const Login = ({ onLoginSuccess, onNavigateToRegister }) => {
+const Login = ({ onLoginSuccess }) => {
   // מצב הטופס - דוא"ל וסיסמה
   const [formData, setFormData] = useState({
     email: '',
@@ -106,20 +106,6 @@ const Login = ({ onLoginSuccess, onNavigateToRegister }) => {
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'טוען...' : 'התחברות'}
         </button>
-
-        <div className="auth-footer">
-          <p>
-            עדיין אין לך חשבון?{' '}
-            <button
-              type="button"
-              className="link-button"
-              onClick={onNavigateToRegister}
-              disabled={isLoading}
-            >
-              הירשם כאן
-            </button>
-          </p>
-        </div>
       </form>
     </div>
   );
