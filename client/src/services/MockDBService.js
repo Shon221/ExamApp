@@ -57,6 +57,36 @@ class MockDBService {
     throw new Error('Invalid credentials');
   }
 
+  // הרשמה - יצירת משתמש חדש וההתחברות אוטומטית
+  async register(name, email, password, role) {
+    await this._simulateNetwork();
+
+    // בדיקה שהדוא"ל לא קיים כבר
+    const existingUser = this.users.find(u => u.email === email);
+    if (existingUser) {
+      throw new Error('דוא"ל זה כבר רשום במערכת');
+    }
+
+    // יצירת משתמש חדש
+    const newUser = {
+      id: 'u' + (this.users.length + 1),
+      name,
+      email,
+      password,
+      role
+    };
+
+    // הוספה לרשימה
+    this.users.push(newUser);
+
+    // החזרת משתמש ללא סיסמה וטוקן
+    const { password: _, ...userSafe } = newUser;
+    return {
+      user: userSafe,
+      token: 'mock-jwt-token-' + Math.random().toString(36).substr(2)
+    };
+  }
+
   // קבלת רשימת כל הבחינות (סיכום בלבד - ללא שאלות מלאות)
   async getExams() {
     await this._simulateNetwork();
