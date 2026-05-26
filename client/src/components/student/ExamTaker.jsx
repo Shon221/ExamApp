@@ -56,14 +56,15 @@ const ExamTaker = ({ examId, onFinish }) => {
             
             {q.type === 'multiple-choice' ? (
               <div className="options-list">
-                {q.options.map(opt => (
-                  <label key={opt} className="option-label">
+                {(q.options || []).map((opt, i) => (
+                  <label key={i} className="option-label" style={{ display: 'block', marginBottom: '10px' }}>
                     <input 
                       type="radio" 
                       name={q.id} 
                       value={opt} 
                       onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                       required
+                      checked={answers[q.id] === opt}
                     />
                     {opt}
                   </label>
@@ -74,6 +75,7 @@ const ExamTaker = ({ examId, onFinish }) => {
                 className="form-control"
                 rows="4"
                 placeholder="Type your answer here..."
+                value={answers[q.id] || ''}
                 onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                 required
               />

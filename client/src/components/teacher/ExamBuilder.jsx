@@ -2,11 +2,25 @@ import React, { useState, useEffect } from 'react';
 import mockDBService from '../../services/MockDBService';
 import './Teacher.css';
 
-// טופס לשאלה בודדת בתוך בנאי הבחינה
 const QuestionForm = ({ question, onUpdate, onRemove }) => {
+  const handleOptionChange = (index, value) => {
+    const newOptions = [...(question.options || [])];
+    newOptions[index] = value;
+    onUpdate({ ...question, options: newOptions });
+  };
+
+  const addOption = () => {
+    onUpdate({ ...question, options: [...(question.options || []), ''] });
+  };
+
+  const removeOption = (index) => {
+    const newOptions = (question.options || []).filter((_, i) => i !== index);
+    onUpdate({ ...question, options: newOptions });
+  };
+
   return (
     <div className="question-item">
-      <button className="remove-btn" onClick={onRemove}>✕</button>
+      <button className="remove-btn" type="button" onClick={onRemove}>✕</button>
       <div className="form-group">
         <label>Question Text</label>
         <input
@@ -14,6 +28,7 @@ const QuestionForm = ({ question, onUpdate, onRemove }) => {
           value={question.text}
           onChange={(e) => onUpdate({ ...question, text: e.target.value })}
           placeholder="Enter your question here"
+          required
         />
       </div>
       <div className="form-group">
@@ -26,21 +41,49 @@ const QuestionForm = ({ question, onUpdate, onRemove }) => {
           <option value="open-ended">Open Ended</option>
         </select>
       </div>
+
       {question.type === 'multiple-choice' && (
-        <div style={{ marginTop: '1rem' }}>
-          <p><small>Options management placeholder...</small></p>
+        <div className="options-container" style={{ marginTop: '1rem' }}>
+          <label>Options (Select the correct one)</label>
+          {(question.options || []).map((opt, index) => (
+            <div key={index} className="option-row" style={{ display: 'flex', gap: '10px', marginBottom: '5px', alignItems: 'center' }}>
+              <input
+                type="radio"
+                name={`correct-${question.id}`}
+                checked={question.correctAnswer === opt && opt !== ''}
+                onChange={() => onUpdate({ ...question, correctAnswer: opt })}
+                required
+              />
+              <input
+                type="text"
+                value={opt}
+                onChange={(e) => handleOptionChange(index, e.target.value)}
+                placeholder={`Option ${index + 1}`}
+                required
+              />
+              <button type="button" onClick={() => removeOption(index)}>Remove</button>
+            </div>
+          ))}
+          <button type="button" onClick={addOption}>+ Add Option</button>
+        </div>
+      )}
+
+      {question.type === 'open-ended' && (
+        <div className="form-group" style={{ marginTop: '1rem' }}>
+          <label>Correct Answer</label>
+          <textarea
+            value={question.correctAnswer || ''}
+            onChange={(e) => onUpdate({ ...question, correctAnswer: e.target.value })}
+            placeholder="Enter the expected answer"
+            required
+          />
         </div>
       )}
     </div>
   );
 };
 
-/**
- * ExamBuilder Component - A form for creating or editing exams.
- * Supports adding multiple questions, setting exam details, and publishing.
- */
 const ExamBuilder = ({ examId, onSave, onCancel }) => {
-  // Current state of the exam form
   const [examData, setExamData] = useState({
     title: '',
     instructions: '',
@@ -49,7 +92,6 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
   });
   const [loading, setLoading] = useState(!!examId);
 
-  // If an examId is provided, fetch the existing exam data for editing
   useEffect(() => {
     if (examId) {
       const fetchExam = async () => {
@@ -67,15 +109,13 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }
   }, [examId, onCancel]);
 
-  /**
-   * Adds a new empty question to the exam.
-   */
   const addQuestion = () => {
     const newQuestion = {
       id: Date.now(),
       text: '',
       type: 'multiple-choice',
-      options: []
+      options: ['', ''],
+      correctAnswer: ''
     };
     setExamData(prev => ({
       ...prev,
@@ -83,9 +123,6 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  /**
-   * Updates a specific question's data.
-   */
   const updateQuestion = (id, updatedQuestion) => {
     setExamData(prev => ({
       ...prev,
@@ -93,9 +130,6 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  /**
-   * Removes a question from the exam.
-   */
   const removeQuestion = (id) => {
     setExamData(prev => ({
       ...prev,
@@ -103,17 +137,12 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  /**
-   * Handles form submission for both creating and updating exams.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (examId) {
-        // Update existing exam
         await mockDBService.updateExam(examId, examData);
       } else {
-        // Create a new exam
         await mockDBService.createExam(examData);
       }
       onSave?.(examData);
@@ -123,7 +152,6 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
   };
 
   if (loading) return <div className="teacher-container">Loading Exam Data...</div>;
-
 
   return (
     <div className="teacher-container">
