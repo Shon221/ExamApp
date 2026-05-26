@@ -74,12 +74,12 @@ const Login = ({ onLoginSuccess }) => {
         <h2>Login</h2>
 
         <div className="form-group">
-          <label htmlFor="email">Email address</label>
+          <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
             name="email"
-            placeholder="name@example.com"
+            placeholder="codingstellla@gmail.com"
             value={formData.email}
             onChange={handleChange}
             disabled={isLoading}
@@ -89,7 +89,7 @@ const Login = ({ onLoginSuccess }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">סיסמה</label>
+          <label htmlFor="password">Password</label>
           <input
             id="password"
             type="password"
@@ -103,9 +103,17 @@ const Login = ({ onLoginSuccess }) => {
           {errors.password && <span className="error-message">{errors.password}</span>}
         </div>
 
+        <div className="forgot-password-link">
+          <a href="#forgot">Forgot Password?</a>
+        </div>
+
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'טוען...' : 'Login'}
         </button>
+
+        <div className="signup-link">
+          Don't have an account? <a href="#signup">Signup</a>
+        </div>
       </form>
     </div>
   );
