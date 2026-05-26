@@ -1,12 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import mockDBService from '../../services/MockDBService';
 import './Teacher.css';
 
-const TeacherDashboard = ({ onAddExam }) => {
-  // רשימת בחינות קיימות להצגה בלוח המנהלים
-  const [exams] = useState([
-    { id: 1, title: 'Final Math Exam', status: 'Published' },
-    { id: 2, title: 'Midterm Science', status: 'Draft' },
-  ]);
+const TeacherDashboard = ({ onAddExam, onEditExam }) => {
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadExams();
+  }, []);
+
+  const loadExams = async () => {
+    try {
+      setLoading(true);
+      const data = await mockDBService.getExams();
+      setExams(data);
+    } catch (error) {
+      console.error("Failed to load exams:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (exam) => {
+    const newStatus = exam.status === 'Published' ? 'Draft' : 'Published';
+    try {
+      await mockDBService.updateExamStatus(exam.id, newStatus);
+      setExams(prev => prev.map(e => e.id === exam.id ? { ...e, status: newStatus } : e));
+    } catch (error) {
+      alert("Failed to update status");
+    }
+  };
+
+  if (loading) return <div className="teacher-container">Loading dashboard...</div>;
 
   return (
     <div className="teacher-container">
@@ -24,8 +50,14 @@ const TeacherDashboard = ({ onAddExam }) => {
             <span className={`status-badge status-${exam.status.toLowerCase()}`}>
               {exam.status}
             </span>
-            <div style={{ marginTop: '1rem' }}>
-              <button className="btn-secondary">Edit</button>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '10px' }}>
+              <button className="btn-secondary" onClick={() => onEditExam(exam.id)}>Edit</button>
+              <button 
+                className={`btn-${exam.status === 'Draft' ? 'success' : 'warning'}`}
+                onClick={() => handleToggleStatus(exam)}
+              >
+                {exam.status === 'Draft' ? 'Publish' : 'Unpublish'}
+              </button>
             </div>
           </div>
         ))}
