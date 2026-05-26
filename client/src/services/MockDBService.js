@@ -102,7 +102,50 @@ class MockDBService {
     return { ...exam };
   }
 
-  // יצירת בחינה חדשה וסיוכה לרשימה
+  /**
+   * Updates an existing exam by its ID.
+   * @param {string} id - The ID of the exam to update.
+   * @param {Object} updatedData - The new data for the exam.
+   * @returns {Promise<Object>} The updated exam object.
+   */
+  async updateExam(id, updatedData) {
+    await this._simulateNetwork();
+    const index = this.exams.findIndex(e => e.id === id);
+    if (index === -1) throw new Error('Exam not found');
+    this.exams[index] = { ...this.exams[index], ...updatedData };
+    return this.exams[index];
+  }
+
+  /**
+   * Updates the status of an existing exam.
+   * @param {string} id - The ID of the exam.
+   * @param {string} newStatus - The new status (e.g., 'Published', 'Draft').
+   * @returns {Promise<Object>} The updated exam object.
+   */
+  async updateExamStatus(id, newStatus) {
+    await this._simulateNetwork();
+    const exam = this.exams.find(e => e.id === id);
+    if (!exam) throw new Error('Exam not found');
+    exam.status = newStatus;
+    return exam;
+  }
+
+  /**
+   * Retrieves all exams marked as 'Published'.
+   * @returns {Promise<Array>} A list of published exams (summary only).
+   */
+  async getPublishedExams() {
+    await this._simulateNetwork();
+    return this.exams
+      .filter(e => e.status === 'Published')
+      .map(({ id, title, instructions }) => ({ id, title, instructions }));
+  }
+
+  /**
+   * Creates a new exam and adds it to the mock database.
+   * @param {Object} examData - The data for the new exam.
+   * @returns {Promise<Object>} The created exam object with a new ID.
+   */
   async createExam(examData) {
     await this._simulateNetwork();
     const newExam = {
@@ -113,13 +156,19 @@ class MockDBService {
     return newExam;
   }
 
-  // הגשת בחינה על ידי סטודנט - שמירת התשובות עם timestamp
+  /**
+   * Submits exam answers from a student and calculates a mock score.
+   * @param {Object} submissionData - The student's answers and metadata.
+   * @returns {Promise<Object>} The submission result including a random score.
+   */
   async submitExam(submissionData) {
     await this._simulateNetwork();
+    const score = Math.floor(Math.random() * 41) + 60;
     const submission = {
       ...submissionData,
       id: 's' + (this.submissions.length + 1),
-      submittedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString(),
+      score: score
     };
     this.submissions.push(submission);
     return submission;
