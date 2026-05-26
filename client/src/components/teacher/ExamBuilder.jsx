@@ -3,16 +3,19 @@ import mockDBService from '../../services/MockDBService';
 import './Teacher.css';
 
 const QuestionForm = ({ question, onUpdate, onRemove }) => {
+  // Updates a specific option's text in the question
   const handleOptionChange = (index, value) => {
     const newOptions = [...(question.options || [])];
     newOptions[index] = value;
     onUpdate({ ...question, options: newOptions });
   };
 
+  // Adds a new empty option to the multiple-choice question
   const addOption = () => {
     onUpdate({ ...question, options: [...(question.options || []), ''] });
   };
 
+  // Removes an option from the multiple-choice question
   const removeOption = (index) => {
     const newOptions = (question.options || []).filter((_, i) => i !== index);
     onUpdate({ ...question, options: newOptions });
@@ -84,14 +87,16 @@ const QuestionForm = ({ question, onUpdate, onRemove }) => {
 };
 
 const ExamBuilder = ({ examId, onSave, onCancel }) => {
+  // Manages the state of the entire exam being built or edited
   const [examData, setExamData] = useState({
     title: '',
     instructions: '',
     status: 'Draft',
     questions: []
   });
-  const [loading, setLoading] = useState(!!examId);
+  const [loading, setLoading] = useState(!!examId); // Loading state for fetching existing exam
 
+  // Effect to load existing exam data if an ID is provided
   useEffect(() => {
     if (examId) {
       const fetchExam = async () => {
@@ -109,6 +114,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }
   }, [examId, onCancel]);
 
+  // Adds a new question with default multiple-choice structure
   const addQuestion = () => {
     const newQuestion = {
       id: Date.now(),
@@ -123,6 +129,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
+  // Updates a specific question's properties in the examData state
   const updateQuestion = (id, updatedQuestion) => {
     setExamData(prev => ({
       ...prev,
@@ -130,6 +137,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
+  // Removes a question from the examData state
   const removeQuestion = (id) => {
     setExamData(prev => ({
       ...prev,
@@ -137,6 +145,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
+  // Submits the exam data to the mock database
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {

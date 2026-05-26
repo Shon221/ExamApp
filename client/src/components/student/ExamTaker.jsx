@@ -3,10 +3,11 @@ import mockDBService from '../../services/MockDBService';
 import './Student.css';
 
 const ExamTaker = ({ examId, onFinish }) => {
-  const [exam, setExam] = useState(null);
-  const [answers, setAnswers] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const [exam, setExam] = useState(null); // Stores the current exam data
+  const [answers, setAnswers] = useState({}); // Stores student's selected answers
+  const [submitting, setSubmitting] = useState(false); // Tracks submission state
 
+  // Fetches exam data when the component mounts or examId changes
   useEffect(() => {
     const fetchExam = async () => {
       try {
@@ -19,19 +20,23 @@ const ExamTaker = ({ examId, onFinish }) => {
     fetchExam();
   }, [examId]);
 
+  // Updates the answers state when a student selects or types an answer
   const handleAnswerChange = (questionId, value) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
+  // Handles the exam submission process
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Sends the gathered answers to the mock database for processing
       const result = await mockDBService.submitExam({
         examId: exam.id,
         examTitle: exam.title,
         answers: answers
       });
+      // Callback to the parent component with the result (e.g., score)
       onFinish(result);
     } catch (error) {
       alert("Submission failed. Please try again.");
