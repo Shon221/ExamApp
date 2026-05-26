@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import mockDBService from '../../services/MockDBService';
 import './Student.css';
 
+/**
+ * StudentDashboard Component - The main interface for students.
+ * Fetches and displays a list of published exams available to be taken.
+ */
 const StudentDashboard = ({ onStartExam }) => {
   const [availableExams, setAvailableExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Load published exams from the mock database on mount
   useEffect(() => {
     const loadExams = async () => {
       try {
@@ -21,6 +26,7 @@ const StudentDashboard = ({ onStartExam }) => {
   }, []);
 
   if (loading) return <div className="student-container">Loading available exams...</div>;
+
 
   return (
     <div className="student-container">
