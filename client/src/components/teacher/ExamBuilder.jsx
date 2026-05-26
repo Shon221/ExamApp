@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import mockDBService from '../../services/MockDBService';
 import './Teacher.css';
 
 // טופס לשאלה בודדת בתוך בנאי הבחינה
@@ -34,7 +35,7 @@ const QuestionForm = ({ question, onUpdate, onRemove }) => {
   );
 };
 
-const ExamBuilder = ({ onSave, onCancel }) => {
+const ExamBuilder = ({ examId, onSave, onCancel }) => {
   // מצב הבחינה הנוכחי בטופס
   const [examData, setExamData] = useState({
     title: '',
@@ -42,6 +43,24 @@ const ExamBuilder = ({ onSave, onCancel }) => {
     status: 'Draft',
     questions: []
   });
+  const [loading, setLoading] = useState(!!examId);
+
+  useEffect(() => {
+    if (examId) {
+      const fetchExam = async () => {
+        try {
+          const data = await mockDBService.getExamById(examId);
+          setExamData(data);
+        } catch (error) {
+          alert("Error loading exam data");
+          onCancel();
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchExam();
+    }
+  }, [examId, onCancel]);
 
   // הוספת שאלה חדשה לרשימת השאלות
   const addQuestion = () => {
@@ -73,19 +92,28 @@ const ExamBuilder = ({ onSave, onCancel }) => {
     }));
   };
 
-  // שמירת הבחינה - כרגע פעולה מדומה עם console ו-alert
-  const handleSubmit = (e) => {
+  // שמירת הבחינה
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Saving Exam:', examData);
-    alert('Exam saved successfully (mock)');
-    onSave?.(examData);
+    try {
+      if (examId) {
+        await mockDBService.updateExam(examId, examData);
+      } else {
+        await mockDBService.createExam(examData);
+      }
+      onSave?.(examData);
+    } catch (error) {
+      alert("Failed to save exam");
+    }
   };
+
+  if (loading) return <div className="teacher-container">Loading Exam Data...</div>;
 
   return (
     <div className="teacher-container">
       <form className="builder-form" onSubmit={handleSubmit}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h2>Exam Builder</h2>
+          <h2>{examId ? 'Edit Exam' : 'Exam Builder'}</h2>
           <button type="button" onClick={onCancel}>Cancel</button>
         </div>
 
@@ -134,7 +162,9 @@ const ExamBuilder = ({ onSave, onCancel }) => {
           </button>
         </div>
 
-        <button type="submit" className="btn-primary">Save Exam</button>
+        <button type="submit" className="btn-primary">
+          {examId ? 'Update Exam' : 'Save Exam'}
+        </button>
       </form>
     </div>
   );
