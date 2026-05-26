@@ -35,8 +35,12 @@ const QuestionForm = ({ question, onUpdate, onRemove }) => {
   );
 };
 
+/**
+ * ExamBuilder Component - A form for creating or editing exams.
+ * Supports adding multiple questions, setting exam details, and publishing.
+ */
 const ExamBuilder = ({ examId, onSave, onCancel }) => {
-  // מצב הבחינה הנוכחי בטופס
+  // Current state of the exam form
   const [examData, setExamData] = useState({
     title: '',
     instructions: '',
@@ -45,6 +49,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
   });
   const [loading, setLoading] = useState(!!examId);
 
+  // If an examId is provided, fetch the existing exam data for editing
   useEffect(() => {
     if (examId) {
       const fetchExam = async () => {
@@ -62,7 +67,9 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }
   }, [examId, onCancel]);
 
-  // הוספת שאלה חדשה לרשימת השאלות
+  /**
+   * Adds a new empty question to the exam.
+   */
   const addQuestion = () => {
     const newQuestion = {
       id: Date.now(),
@@ -76,7 +83,9 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  // עדכון שאלה קיימת לפי ה-id שלה
+  /**
+   * Updates a specific question's data.
+   */
   const updateQuestion = (id, updatedQuestion) => {
     setExamData(prev => ({
       ...prev,
@@ -84,7 +93,9 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  // הסרת שאלה לפי id
+  /**
+   * Removes a question from the exam.
+   */
   const removeQuestion = (id) => {
     setExamData(prev => ({
       ...prev,
@@ -92,13 +103,17 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
     }));
   };
 
-  // שמירת הבחינה
+  /**
+   * Handles form submission for both creating and updating exams.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (examId) {
+        // Update existing exam
         await mockDBService.updateExam(examId, examData);
       } else {
+        // Create a new exam
         await mockDBService.createExam(examData);
       }
       onSave?.(examData);
@@ -108,6 +123,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
   };
 
   if (loading) return <div className="teacher-container">Loading Exam Data...</div>;
+
 
   return (
     <div className="teacher-container">
