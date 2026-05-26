@@ -4,17 +4,27 @@ import notifyService from '../../services/NotifyService.js';
 import loggerService from '../../services/LoggerService.js';
 import './Auth.css';
 
+/**
+ * Register Component - Handles user registration for students and lecturers.
+ * Integrates with AuthService for backend communication and NotifyService for user feedback.
+ */
 const Register = ({ onRegisterSuccess, onBackToLogin }) => {
+  // Local state for registration form data.
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'student'
+    role: 'student' // Default role is student.
   });
 
+  // UI state for loading indicators and validation errors.
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  /**
+   * Handles input changes and clears associated validation errors.
+   * @param {Object} e - The change event object.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -29,6 +39,10 @@ const Register = ({ onRegisterSuccess, onBackToLogin }) => {
     }
   };
 
+  /**
+   * Handles form submission, calls AuthService.register, and manages success/failure states.
+   * @param {Object} e - The form submission event.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -46,6 +60,7 @@ const Register = ({ onRegisterSuccess, onBackToLogin }) => {
       if (result.success) {
         loggerService.info(`Registration successful for: ${formData.email}`);
         notifyService.success(result.message);
+        // Callback to parent component on successful registration.
         if (onRegisterSuccess) {
           onRegisterSuccess(result.user);
         }
@@ -127,7 +142,12 @@ const Register = ({ onRegisterSuccess, onBackToLogin }) => {
         </button>
 
         <div className="auth-footer" style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <p>Already have an account? <button type="button" className="btn-link" onClick={onBackToLogin}>Login here</button></p>
+          <p>
+            Already have an account?{' '}
+            <button type="button" className="btn-link" onClick={onBackToLogin}>
+              Login here
+            </button>
+          </p>
         </div>
       </form>
     </div>
