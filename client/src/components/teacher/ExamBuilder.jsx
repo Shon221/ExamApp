@@ -96,7 +96,7 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
   });
   const [loading, setLoading] = useState(!!examId); // Loading state for fetching existing exam
 
-  // Effect to load existing exam data if an ID is provided
+  // Effect to load existing exam data if an ID is provided, or reset if not
   useEffect(() => {
     if (examId) {
       const fetchExam = async () => {
@@ -111,6 +111,15 @@ const ExamBuilder = ({ examId, onSave, onCancel }) => {
         }
       };
       fetchExam();
+    } else {
+      // Reset to default state for a new exam
+      setExamData({
+        title: '',
+        instructions: '',
+        status: 'Draft',
+        questions: []
+      });
+      setLoading(false);
     }
   }, [examId, onCancel]);
 

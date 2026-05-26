@@ -5,6 +5,8 @@ import Register from './components/auth/Register';
 import TeacherDashboard from './components/teacher/TeacherDashboard';
 import ExamBuilder from './components/teacher/ExamBuilder';
 import StudentDashboard from './components/student/StudentDashboard';
+import ExamTaker from './components/student/ExamTaker';
+import ExamResults from './components/student/ExamResults';
 import authService from './services/AuthService';
 import './App.css';
 
@@ -17,6 +19,12 @@ function App() {
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   // State for the currently active view/page in the application.
   const [currentView, setCurrentView] = useState('home');
+  // State for the exam being edited (for teachers).
+  const [editingExamId, setEditingExamId] = useState(null);
+  // State for the exam being taken (for students).
+  const [takingExamId, setTakingExamId] = useState(null);
+  // State for the result of a completed exam.
+  const [examResult, setExamResult] = useState(null);
 
   /**
    * Effect hook to synchronize the view with the authentication state.
@@ -49,10 +57,12 @@ function App() {
   };
 
   /**
-   * Navigation helper to switch views.
+   * Navigation helper to switch views and reset relevant states.
    * @param {string} view - The name of the view to navigate to.
    */
   const navigate = (view) => {
+    if (view !== 'edit-exam') setEditingExamId(null);
+    if (view !== 'exam-taker') setTakingExamId(null);
     setCurrentView(view);
   };
 
@@ -72,14 +82,58 @@ function App() {
     // Authenticated views based on the currentView state.
     switch (currentView) {
       case 'teacher-dashboard':
-        return <TeacherDashboard onAddExam={() => navigate('create-exam')} />;
+        return (
+          <TeacherDashboard 
+            onAddExam={() => navigate('create-exam')} 
+            onEditExam={(id) => {
+              setEditingExamId(id);
+              navigate('edit-exam');
+            }}
+          />
+        );
       case 'create-exam':
-        return <ExamBuilder onSave={() => navigate('teacher-dashboard')} onCancel={() => navigate('teacher-dashboard')} />;
+      case 'edit-exam':
+        return (
+          <ExamBuilder 
+            examId={editingExamId}
+            onSave={() => navigate('teacher-dashboard')} 
+            onCancel={() => navigate('teacher-dashboard')} 
+          />
+        );
       case 'student-dashboard':
-        return <StudentDashboard />;
+        return (
+          <StudentDashboard 
+            onStartExam={(id) => {
+              setTakingExamId(id);
+              navigate('exam-taker');
+            }} 
+          />
+        );
+      case 'exam-taker':
+        return (
+          <ExamTaker 
+            examId={takingExamId} 
+            onFinish={(result) => {
+              setExamResult(result);
+              navigate('exam-results');
+            }} 
+          />
+        );
+      case 'exam-results':
+        return (
+          <ExamResults 
+            score={examResult?.score} 
+            feedback={examResult?.feedback} 
+            onBackToDashboard={() => navigate('student-dashboard')} 
+          />
+        );
       default:
         // Default fallback to role-specific dashboard.
-        return currentUser.role === 'lecturer' ? <TeacherDashboard onAddExam={() => navigate('create-exam')} /> : <StudentDashboard />;
+        return currentUser.role === 'lecturer' ? (
+          <TeacherDashboard onAddExam={() => navigate('create-exam')} onEditExam={(id) => { setEditingExamId(id); navigate('edit-exam'); }} />
+        ) : (
+          <StudentDashboard onStartExam={(id) => { setTakingExamId(id); navigate('exam-taker'); }} />
+        );
     }
   };
 
