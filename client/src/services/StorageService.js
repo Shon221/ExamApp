@@ -2,19 +2,20 @@ import { ConfigService } from './ConfigService';
 import { LoggerService } from './LoggerService';
 
 export class StorageService {
-  private static instance: StorageService | null = null;
-  private readonly logger = LoggerService.getInstance();
+  static instance = null;
 
-  private constructor() {}
+  constructor() {
+    this.logger = LoggerService.getInstance();
+  }
 
-  static getInstance(): StorageService {
+  static getInstance() {
     if (!StorageService.instance) {
       StorageService.instance = new StorageService();
     }
     return StorageService.instance;
   }
 
-  set<T>(key: string, value: T): void {
+  set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -22,33 +23,33 @@ export class StorageService {
     }
   }
 
-  get<T>(key: string): T | null {
+  get(key) {
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return null;
-      return JSON.parse(raw) as T;
+      return JSON.parse(raw);
     } catch (error) {
       this.logger.error('StorageService.get failed', { key, error });
       return null;
     }
   }
 
-  remove(key: string): void {
+  remove(key) {
     localStorage.removeItem(key);
   }
 
-  setSession<T>(value: T): void {
-    const key = ConfigService.getInstance().get('sessionKey');
-    this.set(key, value);
+  setSession(value) {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    this.set(sessionKey, value);
   }
 
-  getSession<T>(): T | null {
-    const key = ConfigService.getInstance().get('sessionKey');
-    return this.get<T>(key);
+  getSession() {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    return this.get(sessionKey);
   }
 
-  clearSession(): void {
-    const key = ConfigService.getInstance().get('sessionKey');
-    this.remove(key);
+  clearSession() {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    this.remove(sessionKey);
   }
 }

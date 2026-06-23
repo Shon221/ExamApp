@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExamStatus } from '../../entities';
-import type { IExamData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { MockApiService } from '../../services';
 
 export function TeacherDashboard() {
   const { user } = useAuth();
-  const [exams, setExams] = useState<IExamData[]>([]);
+  const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { SubmissionStatus } from '../../entities';
-import type { IExamData, ISubmissionData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { MockApiService } from '../../services';
 
 export function TeacherSubmissionsPage() {
   const { user } = useAuth();
-  const [exams, setExams] = useState<IExamData[]>([]);
+  const [exams, setExams] = useState([]);
   const [selectedExamId, setSelectedExamId] = useState('');
-  const [submissions, setSubmissions] = useState<ISubmissionData[]>([]);
-  const [studentNames, setStudentNames] = useState<Record<string, string>>({});
-  const [gradingId, setGradingId] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [studentNames, setStudentNames] = useState({});
+  const [gradingId, setGradingId] = useState(null);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState('');
   const api = MockApiService.getInstance();
@@ -30,7 +29,7 @@ export function TeacherSubmissionsPage() {
     api.getSubmissionsByExam(selectedExamId).then(async (res) => {
       if (!res.success || !res.data) return;
       setSubmissions(res.data);
-      const names: Record<string, string> = {};
+      const names = {};
       for (const sub of res.data) {
         const userRes = await api.getUser(sub.studentId);
         if (userRes.success && userRes.data) names[sub.studentId] = userRes.data.fullName;
@@ -39,7 +38,7 @@ export function TeacherSubmissionsPage() {
     });
   }, [selectedExamId]);
 
-  const handleGrade = async (submissionId: string) => {
+  const handleGrade = async (submissionId) => {
     await api.gradeSubmission(submissionId, score, feedback);
     setGradingId(null);
     const res = await api.getSubmissionsByExam(selectedExamId);

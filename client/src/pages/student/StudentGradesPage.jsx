@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
 import { SubmissionStatus } from '../../entities';
-import type { IExamData, ISubmissionData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { MockApiService } from '../../services';
 
-interface GradeRow {
-  submission: ISubmissionData;
-  exam?: IExamData;
-}
-
 export function StudentGradesPage() {
   const { user } = useAuth();
-  const [rows, setRows] = useState<GradeRow[]>([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +19,7 @@ export function StudentGradesPage() {
       const graded = res.data.filter(
         (s) => s.status === SubmissionStatus.Graded || s.status === SubmissionStatus.Submitted,
       );
-      const enriched: GradeRow[] = [];
+      const enriched = [];
       for (const sub of graded) {
         const examRes = await api.getExam(sub.examId);
         enriched.push({ submission: sub, exam: examRes.data });

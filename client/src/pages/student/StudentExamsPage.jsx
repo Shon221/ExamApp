@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { IExamData } from '../../entities';
 import { MockApiService } from '../../services';
 
 export function StudentExamsPage() {
-  const [exams, setExams] = useState<IExamData[]>([]);
+  const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

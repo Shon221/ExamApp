@@ -3,43 +3,43 @@ export const LogLevel = {
   Info: 'info',
   Warn: 'warn',
   Error: 'error',
-} as const;
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+};
 
 export class LoggerService {
-  private static instance: LoggerService | null = null;
-  private minLevel: LogLevel = LogLevel.Debug;
+  static instance = null;
 
-  private constructor() {}
+  constructor() {
+    this.minLevel = LogLevel.Debug;
+  }
 
-  static getInstance(): LoggerService {
+  static getInstance() {
     if (!LoggerService.instance) {
       LoggerService.instance = new LoggerService();
     }
     return LoggerService.instance;
   }
 
-  setMinLevel(level: LogLevel): void {
+  setMinLevel(level) {
     this.minLevel = level;
   }
 
-  debug(message: string, context?: unknown): void {
+  debug(message, context) {
     this.log(LogLevel.Debug, message, context);
   }
 
-  info(message: string, context?: unknown): void {
+  info(message, context) {
     this.log(LogLevel.Info, message, context);
   }
 
-  warn(message: string, context?: unknown): void {
+  warn(message, context) {
     this.log(LogLevel.Warn, message, context);
   }
 
-  error(message: string, context?: unknown): void {
+  error(message, context) {
     this.log(LogLevel.Error, message, context);
   }
 
-  private log(level: LogLevel, message: string, context?: unknown): void {
+  log(level, message, context) {
     if (!this.shouldLog(level)) return;
     const prefix = `[${level.toUpperCase()}] ${new Date().toISOString()}`;
     const payload = context !== undefined ? [message, context] : [message];
@@ -59,7 +59,7 @@ export class LoggerService {
     }
   }
 
-  private shouldLog(level: LogLevel): boolean {
+  shouldLog(level) {
     const order = [LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error];
     return order.indexOf(level) >= order.indexOf(this.minLevel);
   }

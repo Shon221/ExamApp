@@ -2,11 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { UserRole } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 
-interface ProtectedRouteProps {
-  allowedRoles?: UserRole[];
-}
-
-export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+export function ProtectedRoute({ allowedRoles }) {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated || !user) {

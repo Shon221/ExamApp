@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { QuestionType, SubmissionStatus } from '../../entities';
-import type { IAnswerData, IExamData, IQuestionData, ISubmissionData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { ConfigService, MockApiService } from '../../services';
 
@@ -12,10 +11,10 @@ export function StudentTakeExamPage() {
   const api = MockApiService.getInstance();
   const autoSaveMs = ConfigService.getInstance().get('examAutoSaveIntervalMs');
 
-  const [exam, setExam] = useState<IExamData | null>(null);
-  const [questions, setQuestions] = useState<IQuestionData[]>([]);
-  const [submission, setSubmission] = useState<ISubmissionData | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [exam, setExam] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [submission, setSubmission] = useState(null);
+  const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export function StudentTakeExamPage() {
       if (qRes.success && qRes.data) setQuestions(qRes.data);
       if (subRes.success && subRes.data) {
         setSubmission(subRes.data);
-        const map: Record<string, string> = {};
+        const map = {};
         subRes.data.answers.forEach((a) => {
           map[a.questionId] = Array.isArray(a.value) ? a.value.join(',') : String(a.value);
         });
@@ -49,7 +48,7 @@ export function StudentTakeExamPage() {
 
   const saveAnswers = async (showNotify = true) => {
     if (!submission) return;
-    const payload: IAnswerData[] = Object.entries(answers).map(([questionId, value]) => ({
+    const payload = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
       value,
     }));
@@ -68,7 +67,7 @@ export function StudentTakeExamPage() {
     if (res.success) navigate('/student/grades');
   };
 
-  const setAnswer = (questionId: string, value: string) => {
+  const setAnswer = (questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 

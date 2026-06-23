@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AuthService } from '../services';
-import type { SessionUser } from '../services';
 
 export function useAuth() {
   const auth = AuthService.getInstance();
-  const [user, setUser] = useState<SessionUser | null>(auth.getUser());
+  const [user, setUser] = useState(auth.getUser());
 
   useEffect(() => auth.subscribe(setUser), [auth]);
 

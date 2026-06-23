@@ -1,23 +1,22 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserRole } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
+import { ConfigService } from '../../services';
 import './AuthPages.css';
 
-export function RegisterPage() {
-  const { register } = useAuth();
+export function LoginPage() {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>(UserRole.Student);
+  const [email, setEmail] = useState('teacher@exam.com');
+  const [password, setPassword] = useState('teacher123');
   const [loading, setLoading] = useState(false);
+  const appName = ConfigService.getInstance().get('appName');
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const sessionUser = await register({ email, password, fullName, role });
+    const sessionUser = await login({ email, password });
     setLoading(false);
     if (sessionUser) {
       navigate(sessionUser.role === UserRole.Teacher ? '/teacher' : '/student');
@@ -27,18 +26,9 @@ export function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Register</h1>
-        <p className="auth-subtitle">Create a new account</p>
+        <h1>Login</h1>
+        <p className="auth-subtitle">{appName}</p>
         <form onSubmit={handleSubmit} className="auth-form">
-          <label>
-            Full Name
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-          </label>
           <label>
             Email
             <input
@@ -46,6 +36,7 @@ export function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </label>
           <label>
@@ -55,23 +46,23 @@ export function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              autoComplete="current-password"
             />
           </label>
-          <label>
-            Role
-            <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
-              <option value={UserRole.Student}>Student</option>
-              <option value={UserRole.Teacher}>Teacher</option>
-            </select>
-          </label>
           <button type="submit" className="btn btn--primary btn--block" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         <p className="auth-footer">
-          Already have an account? <Link to="/login">Login</Link>
+          No account? <Link to="/register">Register</Link>
         </p>
+        <div className="auth-hint">
+          <strong>Demo accounts:</strong>
+          <br />
+          Teacher: teacher@exam.com / teacher123
+          <br />
+          Student: student@exam.com / student123
+        </div>
       </div>
     </div>
   );

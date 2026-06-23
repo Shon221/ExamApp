@@ -10,24 +10,9 @@ import {
 } from '../entities';
 
 export class MockDatabase {
-  private static instance: MockDatabase | null = null;
-  users: User[] = [];
-  exams: Exam[] = [];
-  questions: Question[] = [];
-  submissions: Submission[] = [];
+  static instance = null;
 
-  private constructor() {
-    this.seed();
-  }
-
-  static getInstance(): MockDatabase {
-    if (!MockDatabase.instance) {
-      MockDatabase.instance = new MockDatabase();
-    }
-    return MockDatabase.instance;
-  }
-
-  reset(): void {
+  constructor() {
     this.users = [];
     this.exams = [];
     this.questions = [];
@@ -35,7 +20,22 @@ export class MockDatabase {
     this.seed();
   }
 
-  private seed(): void {
+  static getInstance() {
+    if (!MockDatabase.instance) {
+      MockDatabase.instance = new MockDatabase();
+    }
+    return MockDatabase.instance;
+  }
+
+  reset() {
+    this.users = [];
+    this.exams = [];
+    this.questions = [];
+    this.submissions = [];
+    this.seed();
+  }
+
+  seed() {
     const teacher = User.fromData({
       id: 'u-teacher-1',
       email: 'teacher@exam.com',

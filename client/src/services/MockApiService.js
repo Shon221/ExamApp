@@ -5,55 +5,30 @@ import {
   Submission,
   SubmissionStatus,
   User,
-  UserRole,
-} from '../entities';
-import type {
-  IAnswerData,
-  IExamData,
-  IQuestionData,
-  ISubmissionData,
-  IUserData,
 } from '../entities';
 import { ConfigService } from './ConfigService';
 import { LoggerService } from './LoggerService';
 import { MockDatabase } from './MockDatabase';
 import { NotifyService } from './NotifyService';
 
-export interface ILoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface IRegisterRequest {
-  email: string;
-  password: string;
-  fullName: string;
-  role: UserRole;
-}
-
-export interface IApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
 export class MockApiService {
-  private static instance: MockApiService | null = null;
-  private readonly db = MockDatabase.getInstance();
-  private readonly config = ConfigService.getInstance();
-  private readonly logger = LoggerService.getInstance();
-  private readonly notify = NotifyService.getInstance();
+  static instance = null;
 
-  private constructor() {}
+  constructor() {
+    this.db = MockDatabase.getInstance();
+    this.config = ConfigService.getInstance();
+    this.logger = LoggerService.getInstance();
+    this.notify = NotifyService.getInstance();
+  }
 
-  static getInstance(): MockApiService {
+  static getInstance() {
     if (!MockApiService.instance) {
       MockApiService.instance = new MockApiService();
     }
     return MockApiService.instance;
   }
 
-  private async simulateNetwork<T>(operation: () => T): Promise<IApiResponse<T>> {
+  async simulateNetwork(operation) {
     const delay = this.config.get('mockDelayMs');
     await new Promise((resolve) => setTimeout(resolve, delay));
     try {
@@ -66,13 +41,11 @@ export class MockApiService {
     }
   }
 
-  private generateId(prefix: string): string {
+  generateId(prefix) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
-  // ——— Auth ———
-
-  async login(request: ILoginRequest): Promise<IApiResponse<Omit<IUserData, 'password'>>> {
+  async login(request) {
     return this.simulateNetwork(() => {
       const user = this.db.users.find(
         (u) => u.email.toLowerCase() === request.email.toLowerCase() && u.password === request.password,
@@ -83,7 +56,7 @@ export class MockApiService {
     });
   }
 
-  async register(request: IRegisterRequest): Promise<IApiResponse<Omit<IUserData, 'password'>>> {
+  async register(request) {
     return this.simulateNetwork(() => {
       const exists = this.db.users.some((u) => u.email.toLowerCase() === request.email.toLowerCase());
       if (exists) throw new Error('Email already registered');
@@ -100,21 +73,19 @@ export class MockApiService {
     });
   }
 
-  // ——— Exams ———
-
-  async getExamsByTeacher(teacherId: string): Promise<IApiResponse<IExamData[]>> {
+  async getExamsByTeacher(teacherId) {
     return this.simulateNetwork(() =>
       this.db.exams.filter((e) => e.teacherId === teacherId).map((e) => e.toData()),
     );
   }
 
-  async getPublishedExams(): Promise<IApiResponse<IExamData[]>> {
+  async getPublishedExams() {
     return this.simulateNetwork(() =>
       this.db.exams.filter((e) => e.status === ExamStatus.Published).map((e) => e.toData()),
     );
   }
 
-  async getExam(examId: string): Promise<IApiResponse<IExamData>> {
+  async getExam(examId) {
     return this.simulateNetwork(() => {
       const exam = this.db.exams.find((e) => e.id === examId);
       if (!exam) throw new Error('Exam not found');
@@ -122,7 +93,7 @@ export class MockApiService {
     });
   }
 
-  async createExam(data: Omit<IExamData, 'id' | 'createdAt'>): Promise<IApiResponse<IExamData>> {
+  async createExam(data) {
     return this.simulateNetwork(() => {
       const exam = Exam.fromData({
         ...data,
@@ -135,7 +106,7 @@ export class MockApiService {
     });
   }
 
-  async updateExam(examId: string, patch: Partial<IExamData>): Promise<IApiResponse<IExamData>> {
+  async updateExam(examId, patch) {
     return this.simulateNetwork(() => {
       const index = this.db.exams.findIndex((e) => e.id === examId);
       if (index === -1) throw new Error('Exam not found');
@@ -146,7 +117,7 @@ export class MockApiService {
     });
   }
 
-  async publishExam(examId: string): Promise<IApiResponse<IExamData>> {
+  async publishExam(examId) {
     return this.simulateNetwork(() => {
       const index = this.db.exams.findIndex((e) => e.id === examId);
       if (index === -1) throw new Error('Exam not found');
@@ -158,7 +129,7 @@ export class MockApiService {
     });
   }
 
-  async deleteExam(examId: string): Promise<IApiResponse<boolean>> {
+  async deleteExam(examId) {
     return this.simulateNetwork(() => {
       const before = this.db.exams.length;
       this.db.exams = this.db.exams.filter((e) => e.id !== examId);
@@ -169,9 +140,7 @@ export class MockApiService {
     });
   }
 
-  // ——— Questions ———
-
-  async getQuestionsByExam(examId: string): Promise<IApiResponse<IQuestionData[]>> {
+  async getQuestionsByExam(examId) {
     return this.simulateNetwork(() =>
       this.db.questions
         .filter((q) => q.examId === examId)
@@ -180,7 +149,7 @@ export class MockApiService {
     );
   }
 
-  async saveQuestion(data: IQuestionData): Promise<IApiResponse<IQuestionData>> {
+  async saveQuestion(data) {
     return this.simulateNetwork(() => {
       const index = this.db.questions.findIndex((q) => q.id === data.id);
       const question = Question.fromData(data);
@@ -193,7 +162,7 @@ export class MockApiService {
     });
   }
 
-  async deleteQuestion(questionId: string): Promise<IApiResponse<boolean>> {
+  async deleteQuestion(questionId) {
     return this.simulateNetwork(() => {
       const before = this.db.questions.length;
       this.db.questions = this.db.questions.filter((q) => q.id !== questionId);
@@ -202,21 +171,19 @@ export class MockApiService {
     });
   }
 
-  // ——— Submissions ———
-
-  async getSubmissionsByExam(examId: string): Promise<IApiResponse<ISubmissionData[]>> {
+  async getSubmissionsByExam(examId) {
     return this.simulateNetwork(() =>
       this.db.submissions.filter((s) => s.examId === examId).map((s) => s.toData()),
     );
   }
 
-  async getSubmissionsByStudent(studentId: string): Promise<IApiResponse<ISubmissionData[]>> {
+  async getSubmissionsByStudent(studentId) {
     return this.simulateNetwork(() =>
       this.db.submissions.filter((s) => s.studentId === studentId).map((s) => s.toData()),
     );
   }
 
-  async getOrCreateSubmission(examId: string, studentId: string): Promise<IApiResponse<ISubmissionData>> {
+  async getOrCreateSubmission(examId, studentId) {
     return this.simulateNetwork(() => {
       let submission = this.db.submissions.find(
         (s) => s.examId === examId && s.studentId === studentId,
@@ -235,7 +202,7 @@ export class MockApiService {
     });
   }
 
-  async saveAnswers(submissionId: string, answers: IAnswerData[]): Promise<IApiResponse<ISubmissionData>> {
+  async saveAnswers(submissionId, answers) {
     return this.simulateNetwork(() => {
       const index = this.db.submissions.findIndex((s) => s.id === submissionId);
       if (index === -1) throw new Error('Submission not found');
@@ -244,7 +211,7 @@ export class MockApiService {
     });
   }
 
-  async submitExam(submissionId: string): Promise<IApiResponse<ISubmissionData>> {
+  async submitExam(submissionId) {
     return this.simulateNetwork(() => {
       const index = this.db.submissions.findIndex((s) => s.id === submissionId);
       if (index === -1) throw new Error('Submission not found');
@@ -256,11 +223,7 @@ export class MockApiService {
     });
   }
 
-  async gradeSubmission(
-    submissionId: string,
-    score: number,
-    feedback: string,
-  ): Promise<IApiResponse<ISubmissionData>> {
+  async gradeSubmission(submissionId, score, feedback) {
     return this.simulateNetwork(() => {
       const index = this.db.submissions.findIndex((s) => s.id === submissionId);
       if (index === -1) throw new Error('Submission not found');
@@ -273,7 +236,7 @@ export class MockApiService {
     });
   }
 
-  async getUser(userId: string): Promise<IApiResponse<Omit<IUserData, 'password'>>> {
+  async getUser(userId) {
     return this.simulateNetwork(() => {
       const user = this.db.users.find((u) => u.id === userId);
       if (!user) throw new Error('User not found');

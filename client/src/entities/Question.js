@@ -1,36 +1,5 @@
-import type { QuestionType } from './enums';
-
-export interface IQuestionData {
-  id: string;
-  examId: string;
-  text: string;
-  type: QuestionType;
-  options?: string[];
-  correctAnswer?: string | string[];
-  points: number;
-  order: number;
-}
-
 export class Question {
-  readonly id: string;
-  examId: string;
-  text: string;
-  type: QuestionType;
-  points: number;
-  order: number;
-  options: string[];
-  correctAnswer?: string | string[];
-
-  constructor(
-    id: string,
-    examId: string,
-    text: string,
-    type: QuestionType,
-    points: number,
-    order: number,
-    options: string[] = [],
-    correctAnswer?: string | string[],
-  ) {
+  constructor(id, examId, text, type, points, order, options = [], correctAnswer) {
     this.id = id;
     this.examId = examId;
     this.text = text;
@@ -41,7 +10,7 @@ export class Question {
     this.correctAnswer = correctAnswer;
   }
 
-  static fromData(data: IQuestionData): Question {
+  static fromData(data) {
     return new Question(
       data.id,
       data.examId,
@@ -54,7 +23,7 @@ export class Question {
     );
   }
 
-  toData(): IQuestionData {
+  toData() {
     return {
       id: this.id,
       examId: this.examId,

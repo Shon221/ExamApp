@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExamStatus } from '../../entities';
-import type { IExamData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { MockApiService } from '../../services';
 
 export function TeacherExamsPage() {
   const { user } = useAuth();
-  const [exams, setExams] = useState<IExamData[]>([]);
+  const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const api = MockApiService.getInstance();
 
@@ -22,12 +21,12 @@ export function TeacherExamsPage() {
 
   useEffect(loadExams, [user]);
 
-  const handlePublish = async (examId: string) => {
+  const handlePublish = async (examId) => {
     await api.publishExam(examId);
     loadExams();
   };
 
-  const handleDelete = async (examId: string) => {
+  const handleDelete = async (examId) => {
     if (!confirm('Delete this exam?')) return;
     await api.deleteExam(examId);
     loadExams();

@@ -1,58 +1,48 @@
-export type NotifyType = 'success' | 'error' | 'info' | 'warning';
-
-export interface INotification {
-  id: string;
-  type: NotifyType;
-  message: string;
-  createdAt: number;
-}
-
-type NotifyListener = (notifications: INotification[]) => void;
-
 export class NotifyService {
-  private static instance: NotifyService | null = null;
-  private notifications: INotification[] = [];
-  private listeners: Set<NotifyListener> = new Set();
-  private idCounter = 0;
+  static instance = null;
 
-  private constructor() {}
+  constructor() {
+    this.notifications = [];
+    this.listeners = new Set();
+    this.idCounter = 0;
+  }
 
-  static getInstance(): NotifyService {
+  static getInstance() {
     if (!NotifyService.instance) {
       NotifyService.instance = new NotifyService();
     }
     return NotifyService.instance;
   }
 
-  subscribe(listener: NotifyListener): () => void {
+  subscribe(listener) {
     this.listeners.add(listener);
     listener([...this.notifications]);
     return () => this.listeners.delete(listener);
   }
 
-  success(message: string): void {
+  success(message) {
     this.push('success', message);
   }
 
-  error(message: string): void {
+  error(message) {
     this.push('error', message);
   }
 
-  info(message: string): void {
+  info(message) {
     this.push('info', message);
   }
 
-  warning(message: string): void {
+  warning(message) {
     this.push('warning', message);
   }
 
-  dismiss(id: string): void {
+  dismiss(id) {
     this.notifications = this.notifications.filter((n) => n.id !== id);
     this.emit();
   }
 
-  private push(type: NotifyType, message: string): void {
-    const notification: INotification = {
+  push(type, message) {
+    const notification = {
       id: `notify-${++this.idCounter}`,
       type,
       message,
@@ -63,7 +53,7 @@ export class NotifyService {
     setTimeout(() => this.dismiss(notification.id), 5000);
   }
 
-  private emit(): void {
+  emit() {
     const snapshot = [...this.notifications];
     this.listeners.forEach((listener) => listener(snapshot));
   }

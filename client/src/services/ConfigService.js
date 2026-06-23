@@ -1,17 +1,7 @@
-export interface IAppConfig {
-  appName: string;
-  apiBaseUrl: string;
-  mockDelayMs: number;
-  sessionKey: string;
-  defaultPageSize: number;
-  examAutoSaveIntervalMs: number;
-}
-
 export class ConfigService {
-  private static instance: ConfigService | null = null;
-  private readonly config: IAppConfig;
+  static instance = null;
 
-  private constructor() {
+  constructor() {
     this.config = {
       appName: import.meta.env.VITE_APP_NAME ?? 'Exam Management System',
       apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api',
@@ -22,18 +12,18 @@ export class ConfigService {
     };
   }
 
-  static getInstance(): ConfigService {
+  static getInstance() {
     if (!ConfigService.instance) {
       ConfigService.instance = new ConfigService();
     }
     return ConfigService.instance;
   }
 
-  get<K extends keyof IAppConfig>(key: K): IAppConfig[K] {
+  get(key) {
     return this.config[key];
   }
 
-  getAll(): Readonly<IAppConfig> {
+  getAll() {
     return { ...this.config };
   }
 }

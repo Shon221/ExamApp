@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExamStatus, QuestionType } from '../../entities';
-import type { IQuestionData } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { MockApiService } from '../../services';
 
@@ -22,8 +20,8 @@ export function TeacherExamEditorPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
-  const [questions, setQuestions] = useState<IQuestionData[]>([]);
-  const [currentExamId, setCurrentExamId] = useState<string | null>(isNew ? null : examId ?? null);
+  const [questions, setQuestions] = useState([]);
+  const [currentExamId, setCurrentExamId] = useState(isNew ? null : examId ?? null);
   const [loading, setLoading] = useState(!isNew);
 
   useEffect(() => {
@@ -40,7 +38,7 @@ export function TeacherExamEditorPage() {
     });
   }, [examId, isNew]);
 
-  const saveExam = async (): Promise<string | null> => {
+  const saveExam = async () => {
     if (!user) return null;
     if (currentExamId) {
       await api.updateExam(currentExamId, { title, description, durationMinutes });
@@ -61,7 +59,7 @@ export function TeacherExamEditorPage() {
     return null;
   };
 
-  const handleSaveExam = async (e: FormEvent) => {
+  const handleSaveExam = async (e) => {
     e.preventDefault();
     await saveExam();
   };
@@ -69,7 +67,7 @@ export function TeacherExamEditorPage() {
   const addQuestion = async () => {
     const eid = currentExamId ?? (await saveExam());
     if (!eid) return;
-    const newQ: IQuestionData = {
+    const newQ = {
       id: `q-${Date.now()}`,
       examId: eid,
       text: 'New question',
@@ -84,7 +82,7 @@ export function TeacherExamEditorPage() {
     if (res.success && res.data) setQuestions(res.data);
   };
 
-  const updateQuestion = async (q: IQuestionData) => {
+  const updateQuestion = async (q) => {
     await api.saveQuestion(q);
     if (currentExamId) {
       const res = await api.getQuestionsByExam(currentExamId);
@@ -92,7 +90,7 @@ export function TeacherExamEditorPage() {
     }
   };
 
-  const removeQuestion = async (questionId: string) => {
+  const removeQuestion = async (questionId) => {
     await api.deleteQuestion(questionId);
     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
   };
@@ -152,16 +150,8 @@ export function TeacherExamEditorPage() {
   );
 }
 
-function QuestionEditorCard({
-  question,
-  onChange,
-  onDelete,
-}: {
-  question: IQuestionData;
-  onChange: (q: IQuestionData) => void;
-  onDelete: () => void;
-}) {
-  const patch = (partial: Partial<IQuestionData>) => onChange({ ...question, ...partial });
+function QuestionEditorCard({ question, onChange, onDelete }) {
+  const patch = (partial) => onChange({ ...question, ...partial });
 
   return (
     <div className="question-card">
@@ -172,7 +162,7 @@ function QuestionEditorCard({
       <div className="form-row">
         <label>
           Type
-          <select value={question.type} onChange={(e) => patch({ type: e.target.value as QuestionType })}>
+          <select value={question.type} onChange={(e) => patch({ type: e.target.value })}>
             {QUESTION_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
