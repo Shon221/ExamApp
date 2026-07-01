@@ -26,4 +26,8 @@ router.get(
 // Return a specific submission (related exam must belong to the lecturer)
 router.get('/submissions/:id', ...lecturerOnly, lecturerController.getSubmissionById);
 
+// PATCH /api/lecturer/submissions/:id/grade
+// Manually grade an answer in a submission
+router.patch('/submissions/:id/grade', ...lecturerOnly, lecturerController.gradeAnswer);
+
 module.exports = router;

@@ -139,6 +139,80 @@ const hasStudentSubmitted = (studentId, examId) => {
   );
 };
 
+/**
+ * Save a draft of a student's answers.
+ */
+const saveDraft = (studentId, examId, answers) => {
+  let draft = mockData.drafts.find(d => d.student_id === studentId && d.exam_id === examId);
+  if (!draft) {
+    draft = {
+      id: generateId(),
+      student_id: studentId,
+      exam_id: examId,
+      answers: answers,
+      updated_at: new Date()
+    };
+    mockData.drafts.push(draft);
+  } else {
+    draft.answers = answers;
+    draft.updated_at = new Date();
+  }
+  return draft;
+};
+
+/**
+ * Get a saved draft for a student's exam.
+ */
+const getDraft = (studentId, examId) => {
+  return mockData.drafts.find(d => d.student_id === studentId && d.exam_id === examId);
+};
+
+/**
+ * Delete a saved draft.
+ */
+const deleteDraft = (studentId, examId) => {
+  mockData.drafts = mockData.drafts.filter(d => !(d.student_id === studentId && d.exam_id === examId));
+};
+
+/**
+ * Manually grade an answer (e.g. for open-text questions).
+ */
+const gradeAnswer = (submissionId, questionId, pointsEarned, feedback, lecturerId) => {
+  const submission = mockData.submissions.find(s => s.id === submissionId);
+  if (!submission) return null;
+
+  const answer = submission.answers.find(a => a.question_id === questionId);
+  if (!answer) return null;
+
+  // Verify the lecturer owns this exam
+  const exam = mockData.exams.find(e => e.id === submission.exam_id);
+  if (!exam || exam.lecturer_id !== lecturerId) {
+    throw new Error('Not authorized to grade this submission');
+  }
+
+  // Find the question to get max points (optional check, but good to have)
+  const question = mockData.questions.find(q => q.id === questionId);
+  if (question && pointsEarned > question.points) {
+    pointsEarned = question.points; // Cap at max points
+  }
+
+  // Subtract old points, add new points
+  submission.total_points_earned -= answer.points_earned || 0;
+  submission.total_points_earned += pointsEarned;
+
+  answer.points_earned = pointsEarned;
+  answer.feedback = feedback;
+  answer.graded_by = lecturerId;
+  answer.graded_at = new Date();
+
+  // Recalculate score
+  submission.score = submission.total_possible_points > 0 
+    ? Math.round((submission.total_points_earned / submission.total_possible_points) * 100) 
+    : 0;
+  
+  return submission;
+};
+
 module.exports = {
   createSubmission,
   getSubmissionsByStudent,
@@ -146,4 +220,8 @@ module.exports = {
   getSubmissionsByLecturer,
   getSubmissionsByExam,
   hasStudentSubmitted,
+  saveDraft,
+  getDraft,
+  deleteDraft,
+  gradeAnswer,
 };

@@ -78,4 +78,37 @@ const getSubmissionById = (req, res, next) => {
   }
 };
 
-module.exports = { getAllSubmissions, getSubmissionsByExam, getSubmissionById };
+/**
+ * PATCH /api/lecturer/submissions/:id/grade
+ * Manually grade a specific question in a submission.
+ */
+const gradeAnswer = (req, res, next) => {
+  try {
+    const { question_id, points_earned, feedback } = req.body;
+    
+    if (!question_id || points_earned === undefined) {
+      return res.status(400).json({ success: false, message: 'Missing question_id or points_earned.' });
+    }
+
+    const updatedSubmission = submissionService.gradeAnswer(
+      req.params.id,
+      question_id,
+      points_earned,
+      feedback || '',
+      req.user.id
+    );
+
+    if (!updatedSubmission) {
+      return res.status(404).json({ success: false, message: 'Submission or answer not found, or not authorized.' });
+    }
+
+    return responseHandler.success(res, { submission: updatedSubmission });
+  } catch (error) {
+    if (error.message === 'Not authorized to grade this submission') {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
+module.exports = { getAllSubmissions, getSubmissionsByExam, getSubmissionById, gradeAnswer };

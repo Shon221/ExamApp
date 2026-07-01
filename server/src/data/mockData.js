@@ -117,6 +117,10 @@ const mockData = {
     },
   ],
 
+  // ─── Drafts ──────────────────────────────────────────────────────────────────
+  // Stores in-progress exams for students
+  drafts: [],
+
   // ─── Refresh Tokens ──────────────────────────────────────────────────────────
   // Stores valid refresh tokens so we can invalidate them on logout
   refreshTokens: [],

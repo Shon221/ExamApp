@@ -17,6 +17,12 @@ router.get('/exams', ...studentOnly, studentController.getPublishedExams);
 // GET /api/student/exams/:id — View a single published exam (no correct answers)
 router.get('/exams/:id', ...studentOnly, studentController.getExamForStudent);
 
+// GET /api/student/exams/:id/draft — View a saved draft for an exam
+router.get('/exams/:id/draft', ...studentOnly, studentController.getDraft);
+
+// PUT /api/student/exams/:id/draft — Save a draft for an exam
+router.put('/exams/:id/draft', ...studentOnly, studentController.saveDraft);
+
 // POST /api/student/submissions — Submit an exam for grading
 router.post(
   '/submissions',

@@ -1,6 +1,6 @@
 import { UserRole } from '../entities';
+import { BackendApiService } from './BackendApiService';
 import { LoggerService } from './LoggerService';
-import { MockApiService } from './MockApiService';
 import { NotifyService } from './NotifyService';
 import { StorageService } from './StorageService';
 
@@ -8,7 +8,7 @@ export class AuthService {
   static instance = null;
 
   constructor() {
-    this.api = MockApiService.getInstance();
+    this.api = BackendApiService.getInstance();
     this.storage = StorageService.getInstance();
     this.logger = LoggerService.getInstance();
     this.notify = NotifyService.getInstance();
@@ -52,6 +52,8 @@ export class AuthService {
       this.notify.error(response.error ?? 'Login failed');
       return null;
     }
+    // Store tokens
+    this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     this.notify.success(`Welcome, ${response.data.fullName}`);
     return response.data;
@@ -63,13 +65,19 @@ export class AuthService {
       this.notify.error(response.error ?? 'Registration failed');
       return null;
     }
+    // Store tokens
+    this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     return response.data;
   }
 
   logout() {
+    // Attempt to notify server (fire-and-forget)
+    const refreshToken = this.storage.getRefreshToken();
+    this.api.logout(refreshToken).catch(() => {});
     this.currentUser = null;
     this.storage.clearSession();
+    this.storage.clearTokens();
     this.logger.info('User logged out');
     this.emit();
     this.notify.info('Logged out');
@@ -83,9 +91,13 @@ export class AuthService {
 
   restoreSession() {
     const saved = this.storage.getSession();
-    if (saved) {
+    const token = this.storage.getAccessToken();
+    if (saved && token) {
       this.currentUser = saved;
       this.logger.debug('Session restored', { email: saved.email });
+    } else if (saved && !token) {
+      // Session exists but no token — clear stale session
+      this.storage.clearSession();
     }
   }
 

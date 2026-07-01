@@ -4,4 +4,6 @@ export { StorageService } from './StorageService';
 export { NotifyService } from './NotifyService';
 export { MockDatabase } from './MockDatabase';
 export { MockApiService } from './MockApiService';
+export { ApiClient } from './ApiClient';
+export { BackendApiService } from './BackendApiService';
 export { AuthService } from './AuthService';

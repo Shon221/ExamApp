@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExamStatus, QuestionType } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 const QUESTION_TYPES = [
   { value: QuestionType.MultipleChoice, label: 'Multiple Choice' },
@@ -15,7 +15,7 @@ export function TeacherExamEditorPage() {
   const isNew = !examId || examId === 'new';
   const { user } = useAuth();
   const navigate = useNavigate();
-  const api = MockApiService.getInstance();
+  const api = BackendApiService.getInstance();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -91,7 +91,7 @@ export function TeacherExamEditorPage() {
   };
 
   const removeQuestion = async (questionId) => {
-    await api.deleteQuestion(questionId);
+    await api.deleteQuestion(questionId, currentExamId);
     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
   };
 
