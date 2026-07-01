@@ -62,8 +62,9 @@ const refreshTokenSchema = Joi.object({
  * and PUT /api/exams/:id (update exam)
  */
 const examSchema = Joi.object({
-  title: Joi.string().min(3).max(200).required().messages({
-    'string.min': 'Title must be at least 3 characters',
+  title: Joi.string().trim().min(1).max(200).required().messages({
+    'string.empty': 'Title is required',
+    'string.min': 'Title is required',
     'any.required': 'Title is required',
   }),
   instructions: Joi.string().max(2000).optional().allow(''),
@@ -96,8 +97,9 @@ const questionSchema = Joi.object({
     'any.only': 'Type must be one of: multiple-choice, true-false, short-answer',
     'any.required': 'Question type is required',
   }),
-  text: Joi.string().min(3).required().messages({
-    'string.min': 'Question text must be at least 3 characters',
+  text: Joi.string().trim().min(1).required().messages({
+    'string.empty': 'Question text is required',
+    'string.min': 'Question text is required',
     'any.required': 'Question text is required',
   }),
   options: Joi.array().items(Joi.string()).min(2).when('type', {

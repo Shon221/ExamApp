@@ -112,10 +112,10 @@ class ValidationService {
             };
         }
 
-        if (title.trim().length < 3) {
+        if (title.trim().length === 0) {
             return {
                 valid: false,
-                message: 'כותרת בחינה חייבת להיות לפחות 3 תווים'
+                message: 'כותרת בחינה היא שדה חובה'
             };
         }
 

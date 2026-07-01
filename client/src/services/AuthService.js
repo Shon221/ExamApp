@@ -46,8 +46,8 @@ export class AuthService {
     return this.currentUser?.role === UserRole.Student;
   }
 
-  async login(request) {
-    const response = await this.api.login(request);
+  async login({ email, password }) {
+    const response = await this.api.login({ email, password });
     if (!response.success || !response.data) {
       this.notify.error(response.error ?? 'Login failed');
       return null;

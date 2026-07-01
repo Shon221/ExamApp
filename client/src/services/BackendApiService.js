@@ -150,11 +150,8 @@ export class BackendApiService {
    * Mapped to client shape: data = user (public view)
    * Tokens are stored separately by AuthService.
    */
-  async login(request) {
-    const res = await this.client.post('/api/auth/login', {
-      email: request.email,
-      password: request.password,
-    });
+  async login({ email, password }) {
+    const res = await this.client.post('/api/auth/login', { email, password });
     if (!res.success) {
       return { success: false, error: res.error };
     }
