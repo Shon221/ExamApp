@@ -8,8 +8,8 @@ import './AuthPages.css';
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('teacher@exam.com');
-  const [password, setPassword] = useState('teacher123');
+  const [email, setEmail] = useState('lecturer@example.com');
+  const [password, setPassword] = useState('123456');
   const [loading, setLoading] = useState(false);
   const appName = ConfigService.getInstance().get('appName');
 
@@ -59,9 +59,9 @@ export function LoginPage() {
         <div className="auth-hint">
           <strong>Demo accounts:</strong>
           <br />
-          Teacher: teacher@exam.com / teacher123
+          Lecturer: lecturer@example.com / 123456
           <br />
-          Student: student@exam.com / student123
+          Student: student@example.com / 123456
         </div>
       </div>
     </div>
