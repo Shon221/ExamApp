@@ -49,6 +49,12 @@ app.use('/api/exams', questionRoutes);     // nested: /api/exams/:examId/questio
 app.use('/api/student', studentRoutes);
 app.use('/api/lecturer', lecturerRoutes);
 
+// ─── Health Check Routes (PostgreSQL) ─────────────────────────────────────────
+// DB health check: GET /api/health/db
+// NOTE: The existing GET /api/health (above) is unchanged.
+const healthRoutes = require('./routes/healthRoutes');
+app.use('/api/health', healthRoutes);
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 // If no route matched, return a 404 error
 app.use((req, res) => {
