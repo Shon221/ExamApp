@@ -4,7 +4,7 @@
 // A lecturer can only manage questions for their own exams.
 
 const examService = require('../services/examService');
-const examsRepository = require('../repositories/examsRepository');
+const questionsRepository = require('../repositories/questionsRepository');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
 
@@ -30,7 +30,7 @@ const createQuestion = async (req, res, next) => {
       });
     }
 
-    const newQuestion = await examsRepository.createQuestion(examId, req.body);
+    const newQuestion = await questionsRepository.createQuestion(examId, req.body);
 
     logger.success(`Question added to exam "${exam.title}" by ${req.user.email}`);
 
@@ -60,7 +60,7 @@ const getQuestions = async (req, res, next) => {
       });
     }
 
-    const questions = await examsRepository.getQuestionsByExam(examId);
+    const questions = await questionsRepository.getQuestionsByExam(examId);
 
     return responseHandler.success(res, { questions });
   } catch (error) {
@@ -88,7 +88,7 @@ const updateQuestion = async (req, res, next) => {
       });
     }
 
-    const updatedQuestion = await examsRepository.updateQuestion(examId, questionId, req.body);
+    const updatedQuestion = await questionsRepository.updateQuestion(examId, questionId, req.body);
 
     if (!updatedQuestion) {
       return res.status(404).json({
@@ -127,7 +127,7 @@ const deleteQuestion = async (req, res, next) => {
       });
     }
 
-    const questionDeleted = await examsRepository.deleteQuestion(examId, questionId);
+    const questionDeleted = await questionsRepository.deleteQuestion(examId, questionId);
     if (!questionDeleted) {
       return res.status(404).json({
         success: false,

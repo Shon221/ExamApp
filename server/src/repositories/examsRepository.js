@@ -62,24 +62,6 @@ const toApiExam = (row) => {
   };
 };
 
-const toApiQuestion = (row) => {
-  if (!row) {
-    return null;
-  }
-
-  return {
-    id: toApiQuestionId(row.id),
-    exam_id: toApiExamId(row.exam_id),
-    type: row.type,
-    text: row.text,
-    options: row.options || [],
-    correct_answer: row.correct_answer,
-    order: row.order,
-    points: row.points,
-    created_at: row.created_at,
-  };
-};
-
 const examSelect = `
   SELECT e.id, e.title, e.instructions, e.lecturer_id, e.status,
          e.duration_minutes, e.passing_score, e.created_at, e.updated_at,
@@ -191,71 +173,10 @@ const updateExamStatus = async (examId, status) => {
   return toApiExam(result.rows[0]);
 };
 
-const getQuestionsByExam = async (examId) => {
-  const result = await pool.query(
-    `SELECT id, exam_id, type, text, options, correct_answer, "order", points, created_at
-       FROM questions
-      WHERE exam_id = $1
-      ORDER BY "order" ASC`,
-    [toDbExamId(examId)]
-  );
-
-  return result.rows.map(toApiQuestion);
-};
-
-const createQuestion = async (examId, questionData) => {
-  const result = await pool.query(
-    `INSERT INTO questions (exam_id, type, text, options, correct_answer, "order", points)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, exam_id, type, text, options, correct_answer, "order", points, created_at`,
-    [
-      toDbExamId(examId),
-      questionData.type,
-      questionData.text,
-      questionData.options || [],
-      questionData.correct_answer,
-      questionData.order,
-      questionData.points,
-    ]
-  );
-
-  return toApiQuestion(result.rows[0]);
-};
-
-const updateQuestion = async (examId, questionId, updates) => {
-  const result = await pool.query(
-    `UPDATE questions
-        SET type = $3,
-            text = $4,
-            options = $5,
-            correct_answer = $6,
-            "order" = $7,
-            points = $8
-      WHERE exam_id = $1 AND id = $2
-      RETURNING id, exam_id, type, text, options, correct_answer, "order", points, created_at`,
-    [
-      toDbExamId(examId),
-      toDbQuestionId(questionId),
-      updates.type,
-      updates.text,
-      updates.options || [],
-      updates.correct_answer,
-      updates.order,
-      updates.points,
-    ]
-  );
-
-  return toApiQuestion(result.rows[0]);
-};
-
-const deleteQuestion = async (examId, questionId) => {
-  const result = await pool.query(
-    'DELETE FROM questions WHERE exam_id = $1 AND id = $2 RETURNING id',
-    [toDbExamId(examId), toDbQuestionId(questionId)]
-  );
-
-  return result.rowCount > 0;
-};
+const getQuestionsByExam = (...args) => require('./questionsRepository').getQuestionsByExam(...args);
+const createQuestion = (...args) => require('./questionsRepository').createQuestion(...args);
+const updateQuestion = (...args) => require('./questionsRepository').updateQuestion(...args);
+const deleteQuestion = (...args) => require('./questionsRepository').deleteQuestion(...args);
 
 module.exports = {
   LEGACY_USER_IDS,
@@ -264,6 +185,7 @@ module.exports = {
   toDbUserId,
   toDbExamId,
   toDbQuestionId,
+  toApiExamId,
   getExamsByLecturer,
   getExamById,
   getPublishedExams,

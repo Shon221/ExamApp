@@ -7,7 +7,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "db:schema": "node scripts/runSchema.js",
-    "db:seed:exams": "node scripts/seedExams.js"
+    "db:seed:exams": "node scripts/seedExams.js",
+    "db:seed:questions": "node scripts/seedQuestions.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
