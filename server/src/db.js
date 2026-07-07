@@ -8,10 +8,15 @@
 
 const { Pool } = require('pg');
 
+const shouldUseSSL =
+  process.env.DATABASE_URL &&
+  !process.env.DATABASE_URL.includes('localhost') &&
+  !process.env.DATABASE_URL.includes('127.0.0.1');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // SSL is required for Render's external PostgreSQL connections
-  ssl: process.env.NODE_ENV === 'production'
+  // SSL is required for Render's external PostgreSQL connections.
+  ssl: shouldUseSSL
     ? { rejectUnauthorized: false }
     : false,
 });
