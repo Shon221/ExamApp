@@ -12,9 +12,9 @@ const responseHandler = require('../utils/responseHandler');
  * GET /api/lecturer/submissions
  * Return all submissions for all exams belonging to the lecturer.
  */
-const getAllSubmissions = (req, res, next) => {
+const getAllSubmissions = async (req, res, next) => {
   try {
-    const submissions = submissionService.getSubmissionsByLecturer(req.user.id);
+    const submissions = await submissionService.getSubmissionsByLecturer(req.user.id);
     return responseHandler.success(res, { submissions });
   } catch (error) {
     next(error);
@@ -26,11 +26,11 @@ const getAllSubmissions = (req, res, next) => {
  * Return all submissions for a specific exam.
  * Exam must belong to the lecturer.
  */
-const getSubmissionsByExam = (req, res, next) => {
+const getSubmissionsByExam = async (req, res, next) => {
   try {
     const { examId } = req.params;
 
-    const exam = examService.getExamById(examId);
+    const exam = await examService.getExamById(examId);
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
     }
@@ -55,7 +55,7 @@ const getSubmissionsByExam = (req, res, next) => {
  * Return a specific submission.
  * The related exam must belong to the lecturer.
  */
-const getSubmissionById = (req, res, next) => {
+const getSubmissionById = async (req, res, next) => {
   try {
     const submission = submissionService.getSubmissionById(req.params.id);
 
@@ -64,7 +64,7 @@ const getSubmissionById = (req, res, next) => {
     }
 
     // Find the exam and verify ownership
-    const exam = examService.getExamById(submission.exam_id);
+    const exam = await examService.getExamById(submission.exam_id);
     if (!exam || exam.lecturer_id !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -82,7 +82,7 @@ const getSubmissionById = (req, res, next) => {
  * PATCH /api/lecturer/submissions/:id/grade
  * Manually grade a specific question in a submission.
  */
-const gradeAnswer = (req, res, next) => {
+const gradeAnswer = async (req, res, next) => {
   try {
     const { question_id, points_earned, feedback } = req.body;
     
@@ -90,7 +90,7 @@ const gradeAnswer = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing question_id or points_earned.' });
     }
 
-    const updatedSubmission = submissionService.gradeAnswer(
+    const updatedSubmission = await submissionService.gradeAnswer(
       req.params.id,
       question_id,
       points_earned,

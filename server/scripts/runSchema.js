@@ -16,6 +16,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const { Client } = require('pg');
+const { getPgConfig } = require('../src/dbConfig');
 
 const SCHEMA_PATH = path.resolve(__dirname, '..', 'src', 'db', 'schema.sql');
 
@@ -39,12 +40,7 @@ async function runSchema() {
   }
 
   // Connect to PostgreSQL and execute the schema
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  });
+  const client = new Client(getPgConfig());
 
   try {
     console.log('🔌 Connecting to PostgreSQL...');

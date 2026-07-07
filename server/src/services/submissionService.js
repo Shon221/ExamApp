@@ -8,6 +8,7 @@
 //   5. Stores the graded submission in mockData
 
 const mockData = require('../data/mockData');
+const examsRepository = require('../repositories/examsRepository');
 const { generateId } = require('./idGenerator');
 
 /**
@@ -19,9 +20,9 @@ const { generateId } = require('./idGenerator');
  * @param {number} timeSpentMinutes - How long the student took
  * @returns {object} The completed submission with scores
  */
-const createSubmission = (examId, studentId, answers, timeSpentMinutes = 0) => {
+const createSubmission = async (examId, studentId, answers, timeSpentMinutes = 0) => {
   // Get all questions for this exam
-  const examQuestions = mockData.questions.filter((q) => q.exam_id === examId);
+  const examQuestions = await examsRepository.getQuestionsByExam(examId);
 
   // Calculate total possible points for the exam
   const totalPossiblePoints = examQuestions.reduce((sum, q) => sum + q.points, 0);
@@ -108,11 +109,10 @@ const getSubmissionById = (submissionId) => {
  * @param {string} lecturerId
  * @returns {Array}
  */
-const getSubmissionsByLecturer = (lecturerId) => {
+const getSubmissionsByLecturer = async (lecturerId) => {
   // First, get all exam IDs that belong to this lecturer
-  const lecturerExamIds = mockData.exams
-    .filter((exam) => exam.lecturer_id === lecturerId)
-    .map((exam) => exam.id);
+  const lecturerExams = await examsRepository.getExamsByLecturer(lecturerId);
+  const lecturerExamIds = lecturerExams.map((exam) => exam.id);
 
   // Then filter submissions to only those exams
   return mockData.submissions.filter((s) => lecturerExamIds.includes(s.exam_id));
@@ -177,7 +177,7 @@ const deleteDraft = (studentId, examId) => {
 /**
  * Manually grade an answer (e.g. for open-text questions).
  */
-const gradeAnswer = (submissionId, questionId, pointsEarned, feedback, lecturerId) => {
+const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lecturerId) => {
   const submission = mockData.submissions.find(s => s.id === submissionId);
   if (!submission) return null;
 
@@ -185,13 +185,14 @@ const gradeAnswer = (submissionId, questionId, pointsEarned, feedback, lecturerI
   if (!answer) return null;
 
   // Verify the lecturer owns this exam
-  const exam = mockData.exams.find(e => e.id === submission.exam_id);
+  const exam = await examsRepository.getExamById(submission.exam_id);
   if (!exam || exam.lecturer_id !== lecturerId) {
     throw new Error('Not authorized to grade this submission');
   }
 
   // Find the question to get max points (optional check, but good to have)
-  const question = mockData.questions.find(q => q.id === questionId);
+  const questions = await examsRepository.getQuestionsByExam(submission.exam_id);
+  const question = questions.find(q => q.id === questionId);
   if (question && pointsEarned > question.points) {
     pointsEarned = question.points; // Cap at max points
   }

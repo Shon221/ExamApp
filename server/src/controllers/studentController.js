@@ -5,8 +5,8 @@
 //   - Submitting an exam
 //   - Viewing their own submissions
 
-const mockData = require('../data/mockData');
 const examService = require('../services/examService');
+const examsRepository = require('../repositories/examsRepository');
 const submissionService = require('../services/submissionService');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
@@ -16,9 +16,9 @@ const logger = require('../utils/logger');
  * Return all published exams for students to browse.
  * Correct answers are NEVER included.
  */
-const getPublishedExams = (req, res, next) => {
+const getPublishedExams = async (req, res, next) => {
   try {
-    const exams = examService.getPublishedExams();
+    const exams = await examService.getPublishedExams();
     return responseHandler.success(res, { exams });
   } catch (error) {
     next(error);
@@ -30,9 +30,9 @@ const getPublishedExams = (req, res, next) => {
  * Return a single published exam with its questions.
  * Correct answers are STRIPPED OUT before sending.
  */
-const getExamForStudent = (req, res, next) => {
+const getExamForStudent = async (req, res, next) => {
   try {
-    const exam = examService.getExamById(req.params.id);
+    const exam = await examService.getExamById(req.params.id);
 
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
@@ -47,9 +47,7 @@ const getExamForStudent = (req, res, next) => {
     }
 
     // Get the questions for this exam, sorted by order
-    const questions = mockData.questions
-      .filter((q) => q.exam_id === exam.id)
-      .sort((a, b) => a.order - b.order)
+    const questions = (await examsRepository.getQuestionsByExam(exam.id))
       // IMPORTANT: Remove correct_answer before sending to student
       .map(({ correct_answer, ...safeQuestion }) => safeQuestion);
 
@@ -68,12 +66,12 @@ const getExamForStudent = (req, res, next) => {
  * POST /api/student/submissions
  * Submit an exam. The server will grade it automatically.
  */
-const submitExam = (req, res, next) => {
+const submitExam = async (req, res, next) => {
   try {
     const { exam_id, answers, time_spent_minutes } = req.body;
 
     // Verify the exam exists
-    const exam = examService.getExamById(exam_id);
+    const exam = await examService.getExamById(exam_id);
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
     }
@@ -95,7 +93,7 @@ const submitExam = (req, res, next) => {
     }
 
     // Grade the submission and save it
-    const submission = submissionService.createSubmission(
+    const submission = await submissionService.createSubmission(
       exam_id,
       req.user.id,
       answers,
