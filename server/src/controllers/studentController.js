@@ -6,7 +6,7 @@
 //   - Viewing their own submissions
 
 const examService = require('../services/examService');
-const examsRepository = require('../repositories/examsRepository');
+const studentExamsRepository = require('../repositories/studentExamsRepository');
 const submissionService = require('../services/submissionService');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
@@ -18,7 +18,7 @@ const logger = require('../utils/logger');
  */
 const getPublishedExams = async (req, res, next) => {
   try {
-    const exams = await examService.getPublishedExams();
+    const exams = await studentExamsRepository.getPublishedExams();
     return responseHandler.success(res, { exams });
   } catch (error) {
     next(error);
@@ -32,24 +32,21 @@ const getPublishedExams = async (req, res, next) => {
  */
 const getExamForStudent = async (req, res, next) => {
   try {
-    const exam = await examService.getExamById(req.params.id);
+    const exam = await studentExamsRepository.getPublishedExamById(req.params.id);
 
     if (!exam) {
+      const examStatus = await studentExamsRepository.getExamStatusById(req.params.id);
+      if (examStatus && examStatus !== 'published') {
+        return res.status(403).json({
+          success: false,
+          message: 'This exam is not available.',
+        });
+      }
+
       return res.status(404).json({ success: false, message: 'Exam not found.' });
     }
 
-    // Students can only see published exams
-    if (exam.status !== 'published') {
-      return res.status(403).json({
-        success: false,
-        message: 'This exam is not available.',
-      });
-    }
-
-    // Get the questions for this exam, sorted by order
-    const questions = (await examsRepository.getQuestionsByExam(exam.id))
-      // IMPORTANT: Remove correct_answer before sending to student
-      .map(({ correct_answer, ...safeQuestion }) => safeQuestion);
+    const questions = await studentExamsRepository.getPublishedExamQuestions(exam.id);
 
     return responseHandler.success(res, {
       exam: {
