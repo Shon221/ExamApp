@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 export function StudentExamsPage() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    MockApiService.getInstance().getPublishedExams().then((res) => {
+    BackendApiService.getInstance().getPublishedExams().then((res) => {
       if (res.success && res.data) setExams(res.data);
       setLoading(false);
     });

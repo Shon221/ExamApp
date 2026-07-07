@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExamStatus } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 export function TeacherDashboard() {
   const { user } = useAuth();
@@ -11,7 +11,7 @@ export function TeacherDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    MockApiService.getInstance()
+    BackendApiService.getInstance()
       .getExamsByTeacher(user.id)
       .then((res) => {
         if (res.success && res.data) setExams(res.data);

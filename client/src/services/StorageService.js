@@ -52,4 +52,24 @@ export class StorageService {
     const sessionKey = ConfigService.getInstance().get('sessionKey');
     this.remove(sessionKey);
   }
+
+  // ─── JWT Token Storage ──────────────────────────────────────────────────
+
+  setTokens(accessToken, refreshToken) {
+    if (accessToken) this.set('exam_app_access_token', accessToken);
+    if (refreshToken) this.set('exam_app_refresh_token', refreshToken);
+  }
+
+  getAccessToken() {
+    return this.get('exam_app_access_token');
+  }
+
+  getRefreshToken() {
+    return this.get('exam_app_refresh_token');
+  }
+
+  clearTokens() {
+    this.remove('exam_app_access_token');
+    this.remove('exam_app_refresh_token');
+  }
 }
