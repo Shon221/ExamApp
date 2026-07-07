@@ -1,28 +1,66 @@
-// שירות רישום לוג - מטפל בהדפסת הודעות לוג עם timestamp
-class LoggerService {
-  // פורמט הודעה - מוסיף timestamp וסוג ההודעה
-  formatMessage(level, message) {
-    const timestamp = new Date().toISOString();
-    return `[${timestamp}] [${level.toUpperCase()}]: ${message}`;
+export const LogLevel = {
+  Debug: 'debug',
+  Info: 'info',
+  Warn: 'warn',
+  Error: 'error',
+};
+
+export class LoggerService {
+  static instance = null;
+
+  constructor() {
+    this.minLevel = LogLevel.Debug;
   }
 
-  // הדפסת הודעה מידע
-  info(message) {
-    console.info(this.formatMessage('info', message));
+  static getInstance() {
+    if (!LoggerService.instance) {
+      LoggerService.instance = new LoggerService();
+    }
+    return LoggerService.instance;
   }
 
-  // הדפסת הודעת אזהרה
-  warn(message) {
-    console.warn(this.formatMessage('warn', message));
+  setMinLevel(level) {
+    this.minLevel = level;
   }
 
-  // הדפסת הודעת שגיאה
-  error(message) {
-    console.error(this.formatMessage('error', message));
+  debug(message, context) {
+    this.log(LogLevel.Debug, message, context);
+  }
+
+  info(message, context) {
+    this.log(LogLevel.Info, message, context);
+  }
+
+  warn(message, context) {
+    this.log(LogLevel.Warn, message, context);
+  }
+
+  error(message, context) {
+    this.log(LogLevel.Error, message, context);
+  }
+
+  log(level, message, context) {
+    if (!this.shouldLog(level)) return;
+    const prefix = `[${level.toUpperCase()}] ${new Date().toISOString()}`;
+    const payload = context !== undefined ? [message, context] : [message];
+    switch (level) {
+      case LogLevel.Debug:
+        console.debug(prefix, ...payload);
+        break;
+      case LogLevel.Info:
+        console.info(prefix, ...payload);
+        break;
+      case LogLevel.Warn:
+        console.warn(prefix, ...payload);
+        break;
+      case LogLevel.Error:
+        console.error(prefix, ...payload);
+        break;
+    }
+  }
+
+  shouldLog(level) {
+    const order = [LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error];
+    return order.indexOf(level) >= order.indexOf(this.minLevel);
   }
 }
-
-// יצירת instance יחיד (Singleton) וקפיאתו כדי למנוע שינויים
-const loggerService = new LoggerService();
-Object.freeze(loggerService);
-export default loggerService;

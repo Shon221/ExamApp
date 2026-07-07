@@ -1,44 +1,55 @@
-// שירות אחסון נתונים - מטפל בשמירה וקריאה של נתונים מה-localStorage
-class StorageService {
-  // בנאי - מקבל storage (ברירת מחדל: localStorage)
-  constructor(storage = localStorage) {
-    this.storage = storage;
+import { ConfigService } from './ConfigService';
+import { LoggerService } from './LoggerService';
+
+export class StorageService {
+  static instance = null;
+
+  constructor() {
+    this.logger = LoggerService.getInstance();
   }
 
-  // שמירת נתונים עם serialization - המרה ל-JSON ושמירה באחסון
-  save(key, value) {
+  static getInstance() {
+    if (!StorageService.instance) {
+      StorageService.instance = new StorageService();
+    }
+    return StorageService.instance;
+  }
+
+  set(key, value) {
     try {
-      const serializedValue = JSON.stringify(value);
-      this.storage.setItem(key, serializedValue);
-    } catch (e) {
-      console.error('Error saving to storage', e);
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      this.logger.error('StorageService.set failed', { key, error });
     }
   }
 
-  // קריאת נתונים עם deserialization - המרה חזרה מ-JSON לאובייקט
-  retrieve(key) {
+  get(key) {
     try {
-      const serializedValue = this.storage.getItem(key);
-      if (serializedValue === null) return null;
-      return JSON.parse(serializedValue);
-    } catch (e) {
-      console.error('Error retrieving from storage', e);
+      const raw = localStorage.getItem(key);
+      if (raw === null) return null;
+      return JSON.parse(raw);
+    } catch (error) {
+      this.logger.error('StorageService.get failed', { key, error });
       return null;
     }
   }
 
-  // הסרת ערך ספציפי מה-storage
   remove(key) {
-    this.storage.removeItem(key);
+    localStorage.removeItem(key);
   }
 
-  // ניקוי כל הנתונים מה-storage
-  clear() {
-    this.storage.clear();
+  setSession(value) {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    this.set(sessionKey, value);
+  }
+
+  getSession() {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    return this.get(sessionKey);
+  }
+
+  clearSession() {
+    const sessionKey = ConfigService.getInstance().get('sessionKey');
+    this.remove(sessionKey);
   }
 }
-
-// יצירת instance יחיד (Singleton) וקפיאתו כדי למנוע שינויים
-const storageService = new StorageService();
-Object.freeze(storageService);
-export default storageService;
