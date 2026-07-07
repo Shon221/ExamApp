@@ -4,8 +4,7 @@
 //
 // NOTE: This file only establishes the connection pool.
 // All existing routes still use mockData (server/src/data/mockData.js).
-// The mockDB is kept as a backup / for local development.
-// This connection is currently used only by the health check route: GET /api/health/db
+// The mockDB is kept as a backup / for local development during gradual migration.
 
 const { Pool } = require('pg');
 

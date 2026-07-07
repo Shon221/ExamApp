@@ -2,7 +2,7 @@
 // Handles all exam management HTTP requests for the lecturer.
 // Lecturers can create, read, update, delete, and change exam status.
 
-const examService = require('../services/examService');
+const examsRepository = require('../repositories/examsRepository');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
 
@@ -10,9 +10,9 @@ const logger = require('../utils/logger');
  * POST /api/exams
  * Create a new exam. Only lecturers can do this.
  */
-const createExam = (req, res, next) => {
+const createExam = async (req, res, next) => {
   try {
-    const newExam = examService.createExam(req.body, req.user.id);
+    const newExam = await examsRepository.createExam(req.body, req.user.id);
 
     logger.success(`Exam created: "${newExam.title}" by lecturer ${req.user.email}`);
 
@@ -26,9 +26,9 @@ const createExam = (req, res, next) => {
  * GET /api/exams
  * Get all exams belonging to the authenticated lecturer.
  */
-const getMyExams = (req, res, next) => {
+const getMyExams = async (req, res, next) => {
   try {
-    const exams = examService.getExamsByLecturer(req.user.id);
+    const exams = await examsRepository.getExamsByLecturer(req.user.id);
     return responseHandler.success(res, { exams });
   } catch (error) {
     next(error);
@@ -39,9 +39,9 @@ const getMyExams = (req, res, next) => {
  * GET /api/exams/:id
  * Get a single exam by ID. Must belong to the authenticated lecturer.
  */
-const getExamById = (req, res, next) => {
+const getExamById = async (req, res, next) => {
   try {
-    const exam = examService.getExamById(req.params.id);
+    const exam = await examsRepository.getExamById(req.params.id);
 
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
@@ -65,9 +65,9 @@ const getExamById = (req, res, next) => {
  * PUT /api/exams/:id
  * Update an exam. Must belong to the authenticated lecturer.
  */
-const updateExam = (req, res, next) => {
+const updateExam = async (req, res, next) => {
   try {
-    const exam = examService.getExamById(req.params.id);
+    const exam = await examsRepository.getExamById(req.params.id);
 
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
@@ -80,7 +80,7 @@ const updateExam = (req, res, next) => {
       });
     }
 
-    const updatedExam = examService.updateExam(req.params.id, req.body);
+    const updatedExam = await examsRepository.updateExam(req.params.id, req.body);
 
     logger.success(`Exam updated: "${updatedExam.title}" by lecturer ${req.user.email}`);
 
@@ -95,9 +95,9 @@ const updateExam = (req, res, next) => {
  * Delete an exam and all related questions and submissions.
  * Must belong to the authenticated lecturer.
  */
-const deleteExam = (req, res, next) => {
+const deleteExam = async (req, res, next) => {
   try {
-    const exam = examService.getExamById(req.params.id);
+    const exam = await examsRepository.getExamById(req.params.id);
 
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
@@ -110,7 +110,7 @@ const deleteExam = (req, res, next) => {
       });
     }
 
-    examService.deleteExam(req.params.id);
+    await examsRepository.deleteExam(req.params.id);
 
     logger.success(`Exam deleted: "${exam.title}" by lecturer ${req.user.email}`);
 
@@ -124,10 +124,10 @@ const deleteExam = (req, res, next) => {
  * PATCH /api/exams/:id/status
  * Change the status of an exam (draft → published → archived).
  */
-const updateExamStatus = (req, res, next) => {
+const updateExamStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
-    const exam = examService.getExamById(req.params.id);
+    const exam = await examsRepository.getExamById(req.params.id);
 
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Exam not found.' });
@@ -140,7 +140,7 @@ const updateExamStatus = (req, res, next) => {
       });
     }
 
-    const updatedExam = examService.updateExamStatus(req.params.id, status);
+    const updatedExam = await examsRepository.updateExamStatus(req.params.id, status);
 
     logger.success(`Exam status changed: "${exam.title}" → "${status}" by ${req.user.email}`);
 
