@@ -8,7 +8,7 @@
 const examService = require('../services/examService');
 const studentExamsRepository = require('../repositories/studentExamsRepository');
 const draftsRepository = require('../repositories/draftsRepository');
-const submissionService = require('../services/submissionService');
+const submissionsRepository = require('../repositories/submissionsRepository');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
 
@@ -83,7 +83,7 @@ const submitExam = async (req, res, next) => {
     }
 
     // Check if student already submitted this exam
-    if (submissionService.hasStudentSubmitted(req.user.id, exam_id)) {
+    if (await submissionsRepository.hasStudentSubmitted(req.user.id, exam_id)) {
       return res.status(409).json({
         success: false,
         message: 'You have already submitted this exam.',
@@ -91,7 +91,7 @@ const submitExam = async (req, res, next) => {
     }
 
     // Grade the submission and save it
-    const submission = await submissionService.createSubmission(
+    const submission = await submissionsRepository.createSubmission(
       exam_id,
       req.user.id,
       answers,
@@ -115,9 +115,9 @@ const submitExam = async (req, res, next) => {
  * GET /api/student/submissions
  * Return all submissions made by the authenticated student.
  */
-const getMySubmissions = (req, res, next) => {
+const getMySubmissions = async (req, res, next) => {
   try {
-    const submissions = submissionService.getSubmissionsByStudent(req.user.id);
+    const submissions = await submissionsRepository.getSubmissionsByStudent(req.user.id);
     return responseHandler.success(res, { submissions });
   } catch (error) {
     next(error);
@@ -128,9 +128,9 @@ const getMySubmissions = (req, res, next) => {
  * GET /api/student/submissions/:id
  * Return a specific submission. Must belong to the student.
  */
-const getSubmissionById = (req, res, next) => {
+const getSubmissionById = async (req, res, next) => {
   try {
-    const submission = submissionService.getSubmissionById(req.params.id);
+    const submission = await submissionsRepository.getSubmissionById(req.params.id);
 
     if (!submission) {
       return res.status(404).json({ success: false, message: 'Submission not found.' });
