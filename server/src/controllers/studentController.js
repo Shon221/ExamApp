@@ -7,6 +7,7 @@
 
 const examService = require('../services/examService');
 const studentExamsRepository = require('../repositories/studentExamsRepository');
+const draftsRepository = require('../repositories/draftsRepository');
 const submissionService = require('../services/submissionService');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
@@ -98,7 +99,7 @@ const submitExam = async (req, res, next) => {
     );
 
     // Delete any saved draft now that it's submitted
-    submissionService.deleteDraft(req.user.id, exam_id);
+    await draftsRepository.deleteDraft(req.user.id, exam_id);
 
     logger.success(
       `Submission created: student ${req.user.email} submitted exam "${exam.title}" | Score: ${submission.score}%`
@@ -153,9 +154,9 @@ const getSubmissionById = (req, res, next) => {
  * GET /api/student/exams/:id/draft
  * Get the saved draft for an exam.
  */
-const getDraft = (req, res, next) => {
+const getDraft = async (req, res, next) => {
   try {
-    const draft = submissionService.getDraft(req.user.id, req.params.id);
+    const draft = await draftsRepository.getDraft(req.user.id, req.params.id);
     if (!draft) {
       return responseHandler.success(res, { draft: null });
     }
@@ -169,10 +170,10 @@ const getDraft = (req, res, next) => {
  * PUT /api/student/exams/:id/draft
  * Save a draft for an exam.
  */
-const saveDraft = (req, res, next) => {
+const saveDraft = async (req, res, next) => {
   try {
     const { answers } = req.body;
-    const draft = submissionService.saveDraft(req.user.id, req.params.id, answers);
+    const draft = await draftsRepository.saveDraft(req.user.id, req.params.id, answers);
     return responseHandler.success(res, { draft });
   } catch (error) {
     next(error);

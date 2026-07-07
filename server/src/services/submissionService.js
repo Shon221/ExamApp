@@ -9,6 +9,7 @@
 
 const mockData = require('../data/mockData');
 const examsRepository = require('../repositories/examsRepository');
+const draftsRepository = require('../repositories/draftsRepository');
 const { generateId } = require('./idGenerator');
 
 /**
@@ -143,35 +144,21 @@ const hasStudentSubmitted = (studentId, examId) => {
  * Save a draft of a student's answers.
  */
 const saveDraft = (studentId, examId, answers) => {
-  let draft = mockData.drafts.find(d => d.student_id === studentId && d.exam_id === examId);
-  if (!draft) {
-    draft = {
-      id: generateId(),
-      student_id: studentId,
-      exam_id: examId,
-      answers: answers,
-      updated_at: new Date()
-    };
-    mockData.drafts.push(draft);
-  } else {
-    draft.answers = answers;
-    draft.updated_at = new Date();
-  }
-  return draft;
+  return draftsRepository.saveDraft(studentId, examId, answers);
 };
 
 /**
  * Get a saved draft for a student's exam.
  */
 const getDraft = (studentId, examId) => {
-  return mockData.drafts.find(d => d.student_id === studentId && d.exam_id === examId);
+  return draftsRepository.getDraft(studentId, examId);
 };
 
 /**
  * Delete a saved draft.
  */
 const deleteDraft = (studentId, examId) => {
-  mockData.drafts = mockData.drafts.filter(d => !(d.student_id === studentId && d.exam_id === examId));
+  return draftsRepository.deleteDraft(studentId, examId);
 };
 
 /**
