@@ -47,29 +47,7 @@ const getDraft = async (studentId, examId) => {
   return toApiDraft(result.rows[0]);
 };
 
-const createDraft = async (studentId, examId, answers) => {
-  const result = await pool.query(
-    `INSERT INTO drafts (student_id, exam_id, answers, updated_at)
-     VALUES ($1, $2, $3::jsonb, CURRENT_TIMESTAMP)
-     RETURNING id, student_id, exam_id, answers, updated_at`,
-    [toDbUserId(studentId), toDbExamId(examId), JSON.stringify(answers || [])]
-  );
 
-  return toApiDraft(result.rows[0]);
-};
-
-const updateDraft = async (studentId, examId, answers) => {
-  const result = await pool.query(
-    `UPDATE drafts
-        SET answers = $3::jsonb,
-            updated_at = CURRENT_TIMESTAMP
-      WHERE student_id = $1 AND exam_id = $2
-      RETURNING id, student_id, exam_id, answers, updated_at`,
-    [toDbUserId(studentId), toDbExamId(examId), JSON.stringify(answers || [])]
-  );
-
-  return toApiDraft(result.rows[0]);
-};
 
 const saveDraft = async (studentId, examId, answers) => {
   const result = await pool.query(
@@ -96,8 +74,7 @@ const deleteDraft = async (studentId, examId) => {
 
 module.exports = {
   getDraft,
-  createDraft,
-  updateDraft,
+
   saveDraft,
   deleteDraft,
 };

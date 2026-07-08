@@ -2,21 +2,7 @@
 // PostgreSQL data access for question routes.
 
 const pool = require('../db');
-const { toDbExamId, toApiExamId } = require('./examsRepository');
-
-const LEGACY_QUESTION_IDS = {
-  q1: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1',
-  q2: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2',
-  q3: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3',
-};
-
-const LEGACY_QUESTION_UUIDS = Object.entries(LEGACY_QUESTION_IDS).reduce((acc, [legacyId, uuid]) => {
-  acc[uuid] = legacyId;
-  return acc;
-}, {});
-
-const toDbQuestionId = (questionId) => LEGACY_QUESTION_IDS[questionId] || questionId;
-const toApiQuestionId = (questionId) => LEGACY_QUESTION_UUIDS[questionId] || questionId;
+const { toDbExamId, toApiExamId, toDbQuestionId, toApiQuestionId } = require('./examsRepository');
 
 const toApiQuestion = (row) => {
   if (!row) {

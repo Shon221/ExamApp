@@ -64,26 +64,7 @@ const hasStudentSubmitted = (studentId, examId) => {
   return submissionsRepository.hasStudentSubmitted(studentId, examId);
 };
 
-/**
- * Save a draft of a student's answers.
- */
-const saveDraft = (studentId, examId, answers) => {
-  return draftsRepository.saveDraft(studentId, examId, answers);
-};
 
-/**
- * Get a saved draft for a student's exam.
- */
-const getDraft = (studentId, examId) => {
-  return draftsRepository.getDraft(studentId, examId);
-};
-
-/**
- * Delete a saved draft.
- */
-const deleteDraft = (studentId, examId) => {
-  return draftsRepository.deleteDraft(studentId, examId);
-};
 
 /**
  * Manually grade an answer.
@@ -105,8 +86,6 @@ module.exports = {
   getSubmissionsByLecturer,
   getSubmissionsByExam,
   hasStudentSubmitted,
-  saveDraft,
-  getDraft,
-  deleteDraft,
+
   gradeAnswer,
 };

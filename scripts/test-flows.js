@@ -57,7 +57,7 @@ async function runTests() {
   const questions = examData.questions || [];
   
   // Find an open text question if exists
-  const openQ = questions.find(q => q.type === 'open_text');
+  const openQ = questions.find(q => q.type === 'short-answer');
 
   // 6. Autosave draft
   const answers = [
