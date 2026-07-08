@@ -3,9 +3,8 @@
 // Each function here corresponds to one API endpoint.
 // Controllers are kept thin — they validate, call services, and return responses.
 
-const mockData = require('../data/mockData');
 const authService = require('../services/authService');
-const { generateId } = require('../services/idGenerator');
+const authRepository = require('../repositories/authRepository');
 const responseHandler = require('../utils/responseHandler');
 const logger = require('../utils/logger');
 
@@ -18,9 +17,7 @@ const register = async (req, res, next) => {
     const { name, email, password, role } = req.body;
 
     // Check if a user with this email already exists
-    const existingUser = mockData.users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
+    const existingUser = await authRepository.getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -31,18 +28,13 @@ const register = async (req, res, next) => {
     // Hash the password before saving
     const hashedPassword = await authService.hashPassword(password);
 
-    // Create the new user object
-    const newUser = {
-      id: generateId(),
+    // Create the new user
+    const newUser = await authRepository.createUser({
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
       role,
-      created_at: new Date(),
-    };
-
-    // Save to mock data
-    mockData.users.push(newUser);
+    });
 
     // Generate access token
     const accessToken = authService.generateAccessToken(newUser);
@@ -56,6 +48,12 @@ const register = async (req, res, next) => {
       accessToken,
     });
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        message: 'A user with this email already exists.',
+      });
+    }
     next(error); // Pass to error handler
   }
 };
@@ -69,9 +67,7 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     // Find user by email (case-insensitive)
-    const user = mockData.users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
+    const user = await authRepository.getUserByEmail(email);
 
     if (!user) {
       return res.status(401).json({
@@ -92,7 +88,7 @@ const login = async (req, res, next) => {
 
     // Generate both tokens
     const accessToken = authService.generateAccessToken(user);
-    const refreshToken = authService.generateRefreshToken(user);
+    const refreshToken = await authService.generateRefreshToken(user);
 
     logger.auth(`User logged in: ${email}`);
 
@@ -111,13 +107,13 @@ const login = async (req, res, next) => {
  * Revoke the refresh token and return success.
  * The frontend is responsible for removing the access token from storage.
  */
-const logout = (req, res, next) => {
+const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
     // If a refresh token was provided, revoke it
     if (refreshToken) {
-      authService.revokeRefreshToken(refreshToken);
+      await authService.revokeRefreshToken(refreshToken);
     }
 
     logger.auth(`User logged out${req.user ? `: ${req.user.email}` : ''}`);
@@ -132,12 +128,12 @@ const logout = (req, res, next) => {
  * POST /api/auth/refresh-token
  * Use a refresh token to get a new access token.
  */
-const refreshToken = (req, res, next) => {
+const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken: token } = req.body;
 
     // Verify the refresh token
-    const result = authService.verifyRefreshToken(token);
+    const result = await authService.verifyRefreshToken(token);
 
     if (!result) {
       return res.status(401).json({
@@ -147,7 +143,7 @@ const refreshToken = (req, res, next) => {
     }
 
     // Find the user
-    const user = mockData.users.find((u) => u.id === result.decoded.id);
+    const user = await authRepository.getUserById(result.decoded.id);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -171,10 +167,9 @@ const refreshToken = (req, res, next) => {
  * Return the currently authenticated user's profile.
  * Requires authenticate middleware (req.user is already set).
  */
-const getMe = (req, res, next) => {
+const getMe = async (req, res, next) => {
   try {
-    // Find the full user object from mock data
-    const user = mockData.users.find((u) => u.id === req.user.id);
+    const user = await authRepository.getUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({
