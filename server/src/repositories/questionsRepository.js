@@ -111,7 +111,6 @@ const deleteQuestion = async (examId, questionId) => {
 };
 
 module.exports = {
-  LEGACY_QUESTION_IDS,
   toDbQuestionId,
   toApiQuestionId,
   getQuestionsByExam,
