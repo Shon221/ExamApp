@@ -4,6 +4,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const errorHandler = require('./middleware/errorHandler');
 
@@ -15,6 +16,9 @@ const studentRoutes = require('./routes/student');
 const lecturerRoutes = require('./routes/lecturer');
 
 const app = express();
+
+const helmet = require('helmet');
+app.use(helmet());
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -36,6 +40,9 @@ app.use(express.json());
 
 // Parse URL-encoded bodies (form submissions)
 app.use(express.urlencoded({ extended: true }));
+
+// Parse cookies
+app.use(cookieParser());
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 // Simple endpoint to verify the server is running

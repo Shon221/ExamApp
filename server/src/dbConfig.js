@@ -18,11 +18,11 @@ const getSslConfig = () => {
   }
 
   if (['true', '1', 'require', 'required', 'yes'].includes(databaseSsl)) {
-    return { rejectUnauthorized: false };
+    return { rejectUnauthorized: true };
   }
 
   return databaseUrl && !isLocalDatabaseUrl(databaseUrl)
-    ? { rejectUnauthorized: false }
+    ? { rejectUnauthorized: true }
     : false;
 };
 

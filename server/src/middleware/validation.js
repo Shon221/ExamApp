@@ -9,6 +9,7 @@
 //   5. If validation passes → calls next() to continue to the controller
 
 const Joi = require('joi');
+const xss = require('xss');
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,20 @@ const submissionSchema = Joi.object({
   time_spent_minutes: Joi.number().min(0).optional(),
 });
 
+/**
+ * Schema for PUT /api/student/exams/:id/draft
+ */
+const draftSchema = Joi.object({
+  answers: Joi.array().items(
+    Joi.object({
+      question_id: Joi.string().required(),
+      answer: Joi.string().required().allow(''),
+    })
+  ).required().messages({
+    'any.required': 'Answers are required',
+  })
+});
+
 // ─── Validation Middleware Factory ────────────────────────────────────────────
 
 /**
@@ -159,6 +174,18 @@ const validate = (schema) => {
       });
     }
 
+    // Sanitize string values to prevent stored XSS
+    const sanitizeObj = (obj) => {
+      for (const key in obj) {
+        if (typeof obj[key] === 'string' && key !== 'password') {
+          obj[key] = xss(obj[key]);
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          sanitizeObj(obj[key]);
+        }
+      }
+    };
+    sanitizeObj(value);
+
     // Replace req.body with the validated (and possibly sanitized) value
     req.body = value;
     next();
@@ -175,5 +202,6 @@ module.exports = {
     examStatus: examStatusSchema,
     question: questionSchema,
     submission: submissionSchema,
+    draft: draftSchema,
   },
 };

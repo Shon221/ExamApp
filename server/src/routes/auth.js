@@ -8,11 +8,19 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
+const rateLimit = require('express-rate-limit');
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, error: 'Too many attempts, please try again later' },
+});
 
 // POST /api/auth/register
 // Public — anyone can register
 router.post(
   '/register',
+  authLimiter,
   validate(schemas.register),  // 1. Validate the body
   authController.register       // 2. Process the registration
 );
@@ -21,6 +29,7 @@ router.post(
 // Public — anyone can log in
 router.post(
   '/login',
+  authLimiter,
   validate(schemas.login),     // 1. Validate the body
   authController.login          // 2. Process the login
 );
@@ -36,7 +45,6 @@ router.post(
 // Public — used to get a new access token using a refresh token
 router.post(
   '/refresh-token',
-  validate(schemas.refreshToken),   // 1. Validate the body has refreshToken field
   authController.refreshToken        // 2. Issue new access token
 );
 

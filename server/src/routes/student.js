@@ -21,7 +21,7 @@ router.get('/exams/:id', ...studentOnly, studentController.getExamForStudent);
 router.get('/exams/:id/draft', ...studentOnly, studentController.getDraft);
 
 // PUT /api/student/exams/:id/draft — Save a draft for an exam
-router.put('/exams/:id/draft', ...studentOnly, studentController.saveDraft);
+router.put('/exams/:id/draft', ...studentOnly, validate(schemas.draft), studentController.saveDraft);
 
 // POST /api/student/submissions — Submit an exam for grading
 router.post(
