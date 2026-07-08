@@ -162,6 +162,35 @@ const getSubmissionByStudentAndExam = async (studentId, examId) => {
   return toApiSubmission(submission, answersBySubmissionId.get(submission.id) || []);
 };
 
+const getSubmissionsByLecturer = async (lecturerId) => {
+  const result = await pool.query(
+    `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
+            s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes
+       FROM submissions s
+       INNER JOIN exams e ON e.id = s.exam_id
+      WHERE e.lecturer_id = $1
+      ORDER BY s.submitted_at DESC`,
+    [toDbUserId(lecturerId)]
+  );
+
+  const answersBySubmissionId = await getAnswersBySubmissionIds(result.rows.map((row) => row.id));
+  return result.rows.map((row) => toApiSubmission(row, answersBySubmissionId.get(row.id) || []));
+};
+
+const getSubmissionsByExam = async (examId) => {
+  const result = await pool.query(
+    `SELECT id, exam_id, student_id, score, total_points_earned,
+            total_possible_points, status, submitted_at, time_spent_minutes
+       FROM submissions
+      WHERE exam_id = $1
+      ORDER BY submitted_at DESC`,
+    [toDbExamId(examId)]
+  );
+
+  const answersBySubmissionId = await getAnswersBySubmissionIds(result.rows.map((row) => row.id));
+  return result.rows.map((row) => toApiSubmission(row, answersBySubmissionId.get(row.id) || []));
+};
+
 const hasStudentSubmitted = async (studentId, examId) => {
   const result = await pool.query(
     `SELECT 1
@@ -269,10 +298,110 @@ const createSubmission = async (examId, studentId, answers, timeSpentMinutes = 0
   }
 };
 
+const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lecturerId) => {
+  if (!isUuid(submissionId)) {
+    return null;
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const submissionResult = await client.query(
+      `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
+              s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes,
+              e.lecturer_id
+         FROM submissions s
+         INNER JOIN exams e ON e.id = s.exam_id
+        WHERE s.id = $1
+        FOR UPDATE OF s`,
+      [submissionId]
+    );
+
+    const submission = submissionResult.rows[0];
+    if (!submission) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+
+    if (submission.lecturer_id !== toDbUserId(lecturerId)) {
+      throw new Error('Not authorized to grade this submission');
+    }
+
+    const answerQuestionId = toDbQuestionId(questionId);
+    const answerResult = await client.query(
+      `SELECT sa.question_id, sa.points_earned, q.points
+         FROM submission_answers sa
+         INNER JOIN questions q ON q.id = sa.question_id
+        WHERE sa.submission_id = $1 AND sa.question_id = $2`,
+      [submissionId, answerQuestionId]
+    );
+
+    const answer = answerResult.rows[0];
+    if (!answer) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+
+    const numericPointsEarned = Number(pointsEarned);
+    const cappedPointsEarned = Math.min(numericPointsEarned, answer.points);
+    const nextTotalPointsEarned =
+      submission.total_points_earned - (answer.points_earned || 0) + cappedPointsEarned;
+    const nextScore = submission.total_possible_points > 0
+      ? Math.round((nextTotalPointsEarned / submission.total_possible_points) * 100)
+      : 0;
+
+    await client.query(
+      `UPDATE submission_answers
+          SET points_earned = $3,
+              feedback = $4,
+              graded_by = $5,
+              graded_at = CURRENT_TIMESTAMP
+        WHERE submission_id = $1 AND question_id = $2`,
+      [
+        submissionId,
+        answerQuestionId,
+        cappedPointsEarned,
+        feedback,
+        toDbUserId(lecturerId),
+      ]
+    );
+
+    const updatedSubmissionResult = await client.query(
+      `UPDATE submissions
+          SET total_points_earned = $2,
+              score = $3,
+              status = 'graded'
+        WHERE id = $1
+        RETURNING id, exam_id, student_id, score, total_points_earned,
+                  total_possible_points, status, submitted_at, time_spent_minutes`,
+      [submissionId, nextTotalPointsEarned, nextScore]
+    );
+
+    await client.query('COMMIT');
+
+    const updatedSubmission = updatedSubmissionResult.rows[0];
+    const answersBySubmissionId = await getAnswersBySubmissionIds([updatedSubmission.id]);
+    return toApiSubmission(
+      updatedSubmission,
+      answersBySubmissionId.get(updatedSubmission.id) || []
+    );
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   createSubmission,
   getSubmissionsByStudent,
   getSubmissionById,
   getSubmissionByStudentAndExam,
+  getSubmissionsByLecturer,
+  getSubmissionsByExam,
   hasStudentSubmitted,
+  gradeAnswer,
 };

@@ -43,7 +43,7 @@ const getSubmissionsByExam = async (req, res, next) => {
       });
     }
 
-    const submissions = submissionService.getSubmissionsByExam(examId);
+    const submissions = await submissionService.getSubmissionsByExam(examId);
     return responseHandler.success(res, { submissions, exam: { id: exam.id, title: exam.title } });
   } catch (error) {
     next(error);
@@ -57,7 +57,7 @@ const getSubmissionsByExam = async (req, res, next) => {
  */
 const getSubmissionById = async (req, res, next) => {
   try {
-    const submission = submissionService.getSubmissionById(req.params.id);
+    const submission = await submissionService.getSubmissionById(req.params.id);
 
     if (!submission) {
       return res.status(404).json({ success: false, message: 'Submission not found.' });
