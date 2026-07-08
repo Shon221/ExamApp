@@ -22,7 +22,7 @@ const getSslConfig = () => {
   }
 
   return databaseUrl && !isLocalDatabaseUrl(databaseUrl)
-    ? { rejectUnauthorized: true }
+    ? { rejectUnauthorized: false }
     : false;
 };
 
