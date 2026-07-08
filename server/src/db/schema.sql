@@ -8,12 +8,11 @@
 --   - The validation schemas (server/src/middleware/validation.js)
 --   - The actual field usage in controllers and services
 --
--- NOTE: The mockDB (mockData.js) is still the primary data source.
---       This schema is prepared for future migration.
---       Currently only the health check route uses the PostgreSQL connection.
+-- NOTE: PostgreSQL is now the primary data source. mockData.js is preserved only as legacy reference data.
 --
--- To apply this schema, run it against your PostgreSQL database:
---   psql $DATABASE_URL -f server/src/db/schema.sql
+-- To apply this schema, run it against your PostgreSQL database using psql
+-- or the project script:
+--   npm run db:schema
 -- ============================================================================
 
 -- ─── Users ──────────────────────────────────────────────────────────────────
