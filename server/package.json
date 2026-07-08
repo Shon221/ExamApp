@@ -1,0 +1,27 @@
+{
+  "name": "examapp-server",
+  "version": "1.0.0",
+  "description": "ExamApp Backend Server - Node.js + Express with Mock Data",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "db:schema": "node scripts/runSchema.js",
+    "db:seed:exams": "node scripts/seedExams.js",
+    "db:seed:questions": "node scripts/seedQuestions.js",
+    "db:seed:auth": "node scripts/seedAuthUsers.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "joi": "^17.13.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.22.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

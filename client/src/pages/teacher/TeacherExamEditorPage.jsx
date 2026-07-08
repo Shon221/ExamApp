@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExamStatus, QuestionType } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 const QUESTION_TYPES = [
   { value: QuestionType.MultipleChoice, label: 'Multiple Choice' },
@@ -15,7 +15,7 @@ export function TeacherExamEditorPage() {
   const isNew = !examId || examId === 'new';
   const { user } = useAuth();
   const navigate = useNavigate();
-  const api = MockApiService.getInstance();
+  const api = BackendApiService.getInstance();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -70,19 +70,21 @@ export function TeacherExamEditorPage() {
     const newQ = {
       id: `q-${Date.now()}`,
       examId: eid,
-      text: 'New question',
+      text: '',
       type: QuestionType.MultipleChoice,
       options: ['Option A', 'Option B'],
       correctAnswer: 'Option A',
       points: 10,
       order: questions.length + 1,
     };
-    await api.saveQuestion(newQ);
-    const res = await api.getQuestionsByExam(eid);
-    if (res.success && res.data) setQuestions(res.data);
+    setQuestions([...questions, newQ]);
   };
 
   const updateQuestion = async (q) => {
+    if (!q.text || q.text.trim().length === 0) {
+      setQuestions(questions.map((x) => (x.id === q.id ? q : x)));
+      return;
+    }
     await api.saveQuestion(q);
     if (currentExamId) {
       const res = await api.getQuestionsByExam(currentExamId);
@@ -91,7 +93,9 @@ export function TeacherExamEditorPage() {
   };
 
   const removeQuestion = async (questionId) => {
-    await api.deleteQuestion(questionId);
+    if (!String(questionId).startsWith('q-')) {
+      await api.deleteQuestion(questionId, currentExamId);
+    }
     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
   };
 

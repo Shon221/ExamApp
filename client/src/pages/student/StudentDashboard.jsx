@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SubmissionStatus } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 export function StudentDashboard() {
   const { user } = useAuth();
@@ -11,7 +11,7 @@ export function StudentDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    const api = MockApiService.getInstance();
+    const api = BackendApiService.getInstance();
     Promise.all([api.getPublishedExams(), api.getSubmissionsByStudent(user.id)]).then(
       ([examsRes, subsRes]) => {
         if (examsRes.success && examsRes.data) setPublishedCount(examsRes.data.length);

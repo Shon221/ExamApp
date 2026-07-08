@@ -38,15 +38,15 @@ export class MockDatabase {
   seed() {
     const teacher = User.fromData({
       id: 'u-teacher-1',
-      email: 'teacher@exam.com',
-      password: 'teacher123',
+      email: 'lecturer@example.com',
+      password: '123456',
       fullName: 'Dr. Sarah Cohen',
       role: UserRole.Teacher,
     });
     const student1 = User.fromData({
       id: 'u-student-1',
-      email: 'student@exam.com',
-      password: 'student123',
+      email: 'student@example.com',
+      password: '123456',
       fullName: 'Yossi Levi',
       role: UserRole.Student,
     });
