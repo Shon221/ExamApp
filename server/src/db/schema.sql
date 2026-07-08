@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS submissions (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     exam_id                 UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
     student_id              UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    score                   INTEGER DEFAULT 0 CHECK (score >= 0 AND score <= 100),
+    score                   INTEGER NOT NULL DEFAULT 0 CHECK (score >= 0 AND score <= 100),
     total_points_earned     INTEGER DEFAULT 0,
     total_possible_points   INTEGER DEFAULT 0,
     status                  VARCHAR(20) NOT NULL DEFAULT 'in-progress' CHECK (status IN ('in-progress', 'submitted', 'graded')),
@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     token           TEXT NOT NULL UNIQUE,
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at      TIMESTAMP NOT NULL
 );
 
 -- ─── Indexes ────────────────────────────────────────────────────────────────
@@ -133,3 +134,18 @@ CREATE INDEX IF NOT EXISTS idx_submission_answers_submission_id ON submission_an
 CREATE INDEX IF NOT EXISTS idx_drafts_student_exam ON drafts(student_id, exam_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- ─── Triggers ───────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = CURRENT_TIMESTAMP;
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_exams_updated_at ON exams;
+CREATE TRIGGER update_exams_updated_at
+BEFORE UPDATE ON exams
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
