@@ -42,6 +42,14 @@ const register = async (req, res, next) => {
     // Log the event
     logger.auth(`User registered: ${email} (${role})`);
 
+    // Set HttpOnly cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
     // Return user data (without password) and token
     return responseHandler.created(res, {
       user: authService.sanitizeUser(newUser),
@@ -92,6 +100,20 @@ const login = async (req, res, next) => {
 
     logger.auth(`User logged in: ${email}`);
 
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     return responseHandler.success(res, {
       user: authService.sanitizeUser(user),
       accessToken,
@@ -111,12 +133,16 @@ const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
-    // If a refresh token was provided, revoke it
-    if (refreshToken) {
-      await authService.revokeRefreshToken(refreshToken);
+    // If a refresh token was provided in body or cookies, revoke it
+    const tokenToRevoke = refreshToken || req.cookies.refreshToken;
+    if (tokenToRevoke) {
+      await authService.revokeRefreshToken(tokenToRevoke);
     }
 
     logger.auth(`User logged out${req.user ? `: ${req.user.email}` : ''}`);
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
 
     return responseHandler.successMessage(res, 'Logged out successfully.');
   } catch (error) {
@@ -130,7 +156,7 @@ const logout = async (req, res, next) => {
  */
 const refreshToken = async (req, res, next) => {
   try {
-    const { refreshToken: token } = req.body;
+    const token = req.body.refreshToken || req.cookies.refreshToken;
 
     // Verify the refresh token
     const result = await authService.verifyRefreshToken(token);
@@ -153,6 +179,13 @@ const refreshToken = async (req, res, next) => {
 
     // Generate a new access token
     const newAccessToken = authService.generateAccessToken(user);
+
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
 
     return responseHandler.success(res, {
       accessToken: newAccessToken,

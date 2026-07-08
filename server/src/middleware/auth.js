@@ -20,24 +20,28 @@ const authRepository = require('../repositories/authRepository');
  * Adds req.user = { id, email, role } if the token is valid.
  */
 const authenticate = async (req, res, next) => {
-  // Get the Authorization header value
-  const authHeader = req.headers['authorization'];
+  // Get the token from HttpOnly cookie or Authorization header as fallback
+  let token = req.cookies.accessToken;
 
-  // Check that the header exists and starts with "Bearer "
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  // Check that the token exists
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: 'Access denied. No token provided. Please log in.',
     });
   }
 
-  // Extract just the token part (remove "Bearer " prefix)
-  const token = authHeader.split(' ')[1];
-
   try {
     // Verify the token with our secret key
     // If the token is expired or tampered with, this will throw an error
-    const decoded = jwt.verify(token, env.jwtSecret);
+    const decoded = jwt.verify(token, env.jwtAccessSecret);
 
     // Find the user in PostgreSQL to make sure they still exist
     const user = await authRepository.getUserById(decoded.id);

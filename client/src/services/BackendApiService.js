@@ -20,25 +20,7 @@ const roleToServer = (role) => (role === 'teacher' ? 'lecturer' : role);
 /** Map server role to client role */
 const roleToClient = (role) => (role === 'lecturer' ? 'teacher' : role);
 
-/** Map client question type to server question type */
-const questionTypeToServer = (type) => {
-  const map = {
-    multiple_choice: 'multiple-choice',
-    true_false: 'true-false',
-    open_text: 'short-answer',
-  };
-  return map[type] || type;
-};
 
-/** Map server question type to client question type */
-const questionTypeToClient = (type) => {
-  const map = {
-    'multiple-choice': 'multiple_choice',
-    'true-false': 'true_false',
-    'short-answer': 'open_text',
-  };
-  return map[type] || type;
-};
 
 /** Map a server user object to client shape */
 const mapUserToClient = (serverUser) => {
@@ -83,7 +65,7 @@ const mapQuestionToClient = (serverQ) => {
   return {
     id: serverQ.id,
     examId: serverQ.exam_id,
-    type: questionTypeToClient(serverQ.type),
+    type: serverQ.type,
     text: serverQ.text,
     options: serverQ.options || [],
     correctAnswer: serverQ.correct_answer,
@@ -94,7 +76,7 @@ const mapQuestionToClient = (serverQ) => {
 
 /** Map a client question to server shape for create/update */
 const mapQuestionToServer = (clientQ) => ({
-  type: questionTypeToServer(clientQ.type),
+  type: clientQ.type,
   text: clientQ.text,
   options: clientQ.options || [],
   correct_answer: clientQ.correctAnswer || '',
@@ -191,20 +173,16 @@ export class BackendApiService {
   /**
    * POST /api/auth/logout
    */
-  async logout(refreshToken) {
-    await this.client.post('/api/auth/logout', {
-      refreshToken: refreshToken || undefined,
-    });
+  async logout() {
+    await this.client.post('/api/auth/logout');
     // Always succeed on client side regardless of server response
   }
 
   /**
    * POST /api/auth/refresh-token
    */
-  async refreshToken(token) {
-    const res = await this.client.post('/api/auth/refresh-token', {
-      refreshToken: token,
-    });
+  async refreshToken() {
+    const res = await this.client.post('/api/auth/refresh-token');
     if (!res.success) {
       return { success: false, error: res.error };
     }
@@ -536,7 +514,7 @@ export class BackendApiService {
    * Student flow changed to single-shot submit.
    */
   async getOrCreateSubmission(_examId, _studentId) {
-    this.logger.warning('getOrCreateSubmission is not supported by the backend');
+    this.logger.warn('getOrCreateSubmission is not supported by the backend');
     return { success: false, error: 'Not supported — use submitExam instead' };
   }
 
@@ -545,7 +523,7 @@ export class BackendApiService {
    * Answers are kept in React state and submitted at once.
    */
   async saveAnswers(_submissionId, _answers) {
-    this.logger.warning('saveAnswers is not supported by the backend');
+    this.logger.warn('saveAnswers is not supported by the backend');
     return { success: false, error: 'Not supported — use submitExam instead' };
   }
 
@@ -554,7 +532,7 @@ export class BackendApiService {
    * No manual grading endpoint exists.
    */
   async gradeSubmission(_submissionId, _score, _feedback) {
-    this.logger.warning('gradeSubmission is not supported — server auto-grades');
+    this.logger.warn('gradeSubmission is not supported — server auto-grades');
     return { success: false, error: 'Server auto-grades submissions' };
   }
 }

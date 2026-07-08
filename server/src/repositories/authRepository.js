@@ -30,9 +30,16 @@ const toApiUser = (row) => {
     id: toApiUserId(row.id),
     name: row.name,
     email: row.email,
-    password: row.password,
     role: row.role,
     created_at: row.created_at,
+  };
+};
+
+const toApiUserWithPassword = (row) => {
+  if (!row) return null;
+  return {
+    ...toApiUser(row),
+    password: row.password,
   };
 };
 
@@ -46,6 +53,7 @@ const toApiRefreshToken = (row) => {
     token: row.token,
     userId: toApiUserId(row.user_id),
     created_at: row.created_at,
+    expires_at: row.expires_at,
   };
 };
 
@@ -58,7 +66,7 @@ const getUserByEmail = async (email) => {
     [email]
   );
 
-  return toApiUser(result.rows[0]);
+  return toApiUserWithPassword(result.rows[0]);
 };
 
 const getUserById = async (userId) => {
@@ -88,12 +96,12 @@ const createUser = async ({ name, email, password, role }) => {
   return toApiUser(result.rows[0]);
 };
 
-const storeRefreshToken = async (token, userId) => {
+const storeRefreshToken = async (token, userId, expiresAt) => {
   const result = await pool.query(
-    `INSERT INTO refresh_tokens (token, user_id)
-     VALUES ($1, $2)
-     RETURNING id, token, user_id, created_at`,
-    [token, toDbUserId(userId)]
+    `INSERT INTO refresh_tokens (token, user_id, expires_at)
+     VALUES ($1, $2, $3)
+     RETURNING id, token, user_id, created_at, expires_at`,
+    [token, toDbUserId(userId), expiresAt]
   );
 
   return toApiRefreshToken(result.rows[0]);
@@ -101,7 +109,7 @@ const storeRefreshToken = async (token, userId) => {
 
 const getRefreshToken = async (token) => {
   const result = await pool.query(
-    `SELECT id, token, user_id, created_at
+    `SELECT id, token, user_id, created_at, expires_at
        FROM refresh_tokens
       WHERE token = $1
       LIMIT 1`,

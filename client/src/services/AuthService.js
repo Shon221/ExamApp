@@ -61,7 +61,6 @@ export class AuthService {
       return null;
     }
 
-    this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     this.notify.success(`Welcome, ${response.data.fullName}`);
     return response.data;
@@ -74,18 +73,15 @@ export class AuthService {
       return null;
     }
 
-    this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     return response.data;
   }
 
   logout() {
-    const refreshToken = this.storage.getRefreshToken();
-    this.api.logout(refreshToken).catch(() => {});
+    this.api.logout().catch(() => {});
     this.currentUser = null;
     this.loading = false;
     this.storage.clearSession();
-    this.storage.clearTokens();
     this.logger.info('User logged out');
     this.emit();
     this.notify.info('Logged out');
@@ -99,9 +95,10 @@ export class AuthService {
   }
 
   async restoreSession() {
-    const token = this.storage.getAccessToken();
-
-    if (!token) {
+    // We rely on the HttpOnly cookie. We can just try to fetch the profile.
+    // If we have a session locally, we try to restore it from server.
+    const hasSession = this.storage.getSession();
+    if (!hasSession) {
       this.clearInvalidSession();
       this.loading = false;
       this.emit();
@@ -129,7 +126,6 @@ export class AuthService {
   clearInvalidSession() {
     this.currentUser = null;
     this.storage.clearSession();
-    this.storage.clearTokens();
   }
 
   emit() {

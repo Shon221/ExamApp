@@ -53,39 +53,5 @@ export class StorageService {
     this.remove(sessionKey);
   }
 
-  // ─── JWT Token Storage ──────────────────────────────────────────────────
 
-  setTokens(accessToken, refreshToken) {
-    if (accessToken) this.set('exam_app_access_token', accessToken);
-    if (refreshToken) this.set('exam_app_refresh_token', refreshToken);
-  }
-
-  getAccessToken() {
-    return this.getToken('exam_app_access_token');
-  }
-
-  getRefreshToken() {
-    return this.getToken('exam_app_refresh_token');
-  }
-
-  clearTokens() {
-    this.remove('exam_app_access_token');
-    this.remove('exam_app_refresh_token');
-  }
-
-  getToken(key) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw === null) return null;
-
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return raw;
-      }
-    } catch (error) {
-      this.logger.error('StorageService.getToken failed', { key, error });
-      return null;
-    }
-  }
 }

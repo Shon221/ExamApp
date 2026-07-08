@@ -30,12 +30,7 @@ class ApiClientClass {
    * Always sends JSON; attaches Bearer token when available.
    */
   _headers() {
-    const headers = { 'Content-Type': 'application/json' };
-    const token = this.storage.getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
+    return { 'Content-Type': 'application/json' };
   }
 
   /**
@@ -47,6 +42,7 @@ class ApiClientClass {
     const options = {
       method,
       headers: this._headers(),
+      credentials: 'include',
     };
     if (body !== undefined) {
       options.body = JSON.stringify(body);

@@ -51,7 +51,7 @@ const generateAccessToken = (user) => {
     name: user.name,
   };
 
-  return jwt.sign(payload, env.jwtSecret, {
+  return jwt.sign(payload, env.jwtAccessSecret, {
     expiresIn: env.jwtExpiresIn,
   });
 };
@@ -69,11 +69,14 @@ const generateRefreshToken = async (user) => {
     type: 'refresh', // Extra field to distinguish from access tokens
   };
 
-  const refreshToken = jwt.sign(payload, env.jwtSecret, {
+  const refreshToken = jwt.sign(payload, env.jwtRefreshSecret, {
     expiresIn: env.refreshTokenExpiresIn,
   });
 
-  await authRepository.storeRefreshToken(refreshToken, user.id);
+  const decoded = jwt.decode(refreshToken);
+  const expiresAt = new Date(decoded.exp * 1000);
+
+  await authRepository.storeRefreshToken(refreshToken, user.id, expiresAt);
 
   return refreshToken;
 };
@@ -86,7 +89,7 @@ const generateRefreshToken = async (user) => {
 const verifyRefreshToken = async (token) => {
   try {
     // Verify the token signature and expiry
-    const decoded = jwt.verify(token, env.jwtSecret);
+    const decoded = jwt.verify(token, env.jwtRefreshSecret);
 
     // Check that this token was stored (not revoked on logout)
     const storedToken = await authRepository.getRefreshToken(token);
