@@ -15,7 +15,8 @@ import { StudentTakeExamPage } from '../pages/student/StudentTakeExamPage';
 import { useAuth } from '../hooks/useAuth';
 
 function HomeRedirect() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <p className="loading-text">Loading...</p>;
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
   return <Navigate to={user.role === UserRole.Teacher ? '/teacher' : '/student'} replace />;
 }

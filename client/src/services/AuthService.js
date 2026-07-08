@@ -13,6 +13,7 @@ export class AuthService {
     this.logger = LoggerService.getInstance();
     this.notify = NotifyService.getInstance();
     this.currentUser = null;
+    this.loading = true;
     this.listeners = new Set();
     this.restoreSession();
   }
@@ -26,12 +27,19 @@ export class AuthService {
 
   subscribe(listener) {
     this.listeners.add(listener);
-    listener(this.currentUser);
+    listener(this.getAuthState());
     return () => this.listeners.delete(listener);
   }
 
   getUser() {
     return this.currentUser;
+  }
+
+  getAuthState() {
+    return {
+      user: this.currentUser,
+      isLoading: this.loading,
+    };
   }
 
   isAuthenticated() {
@@ -52,7 +60,7 @@ export class AuthService {
       this.notify.error(response.error ?? 'Login failed');
       return null;
     }
-    // Store tokens
+
     this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     this.notify.success(`Welcome, ${response.data.fullName}`);
@@ -65,17 +73,17 @@ export class AuthService {
       this.notify.error(response.error ?? 'Registration failed');
       return null;
     }
-    // Store tokens
+
     this.storage.setTokens(response.accessToken, response.refreshToken);
     this.setSession(response.data);
     return response.data;
   }
 
   logout() {
-    // Attempt to notify server (fire-and-forget)
     const refreshToken = this.storage.getRefreshToken();
     this.api.logout(refreshToken).catch(() => {});
     this.currentUser = null;
+    this.loading = false;
     this.storage.clearSession();
     this.storage.clearTokens();
     this.logger.info('User logged out');
@@ -85,23 +93,47 @@ export class AuthService {
 
   setSession(user) {
     this.currentUser = user;
+    this.loading = false;
     this.storage.setSession(user);
     this.emit();
   }
 
-  restoreSession() {
-    const saved = this.storage.getSession();
+  async restoreSession() {
     const token = this.storage.getAccessToken();
-    if (saved && token) {
-      this.currentUser = saved;
-      this.logger.debug('Session restored', { email: saved.email });
-    } else if (saved && !token) {
-      // Session exists but no token — clear stale session
-      this.storage.clearSession();
+
+    if (!token) {
+      this.clearInvalidSession();
+      this.loading = false;
+      this.emit();
+      return;
+    }
+
+    try {
+      const response = await this.api.getMe();
+      if (response.success && response.data) {
+        this.currentUser = response.data;
+        this.storage.setSession(response.data);
+        this.logger.debug('Session restored', { email: response.data.email });
+      } else {
+        this.clearInvalidSession();
+      }
+    } catch (error) {
+      this.logger.error('Session restore failed', { error });
+      this.clearInvalidSession();
+    } finally {
+      this.loading = false;
+      this.emit();
     }
   }
 
+  clearInvalidSession() {
+    this.currentUser = null;
+    this.storage.clearSession();
+    this.storage.clearTokens();
+  }
+
   emit() {
-    this.listeners.forEach((listener) => listener(this.currentUser));
+    const state = this.getAuthState();
+    this.listeners.forEach((listener) => listener(state));
   }
 }
