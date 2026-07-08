@@ -35,6 +35,9 @@ export function TeacherExamEditorPage() {
       }
       if (qRes.success && qRes.data) setQuestions(qRes.data);
       setLoading(false);
+    }).catch(err => {
+      console.error('Failed to load exam editor data:', err);
+      setLoading(false);
     });
   }, [examId, isNew]);
 

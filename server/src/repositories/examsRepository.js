@@ -128,16 +128,14 @@ const createExam = async (examData, lecturerId) => {
 };
 
 const updateExam = async (examId, updates) => {
-  const result = await pool.query(
+  await pool.query(
     `UPDATE exams
         SET title = $2,
             instructions = COALESCE($3, instructions),
             duration_minutes = $4,
             passing_score = $5,
             updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING id, title, instructions, lecturer_id, status, duration_minutes,
-                passing_score, created_at, updated_at`,
+      WHERE id = $1`,
     [
       toDbExamId(examId),
       updates.title,
@@ -147,7 +145,7 @@ const updateExam = async (examId, updates) => {
     ]
   );
 
-  return toApiExam(result.rows[0]);
+  return getExamById(examId);
 };
 
 const deleteExam = async (examId) => {
@@ -160,17 +158,15 @@ const deleteExam = async (examId) => {
 };
 
 const updateExamStatus = async (examId, status) => {
-  const result = await pool.query(
+  await pool.query(
     `UPDATE exams
         SET status = $2,
             updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING id, title, instructions, lecturer_id, status, duration_minutes,
-                passing_score, created_at, updated_at`,
+      WHERE id = $1`,
     [toDbExamId(examId), status]
   );
 
-  return toApiExam(result.rows[0]);
+  return getExamById(examId);
 };
 
 const getQuestionsByExam = (...args) => require('./questionsRepository').getQuestionsByExam(...args);
@@ -186,6 +182,7 @@ module.exports = {
   toDbExamId,
   toDbQuestionId,
   toApiExamId,
+  toApiQuestionId,
   getExamsByLecturer,
   getExamById,
   getPublishedExams,

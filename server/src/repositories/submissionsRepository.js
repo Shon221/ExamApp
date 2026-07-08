@@ -210,32 +210,26 @@ const createSubmission = async (examId, studentId, answers, timeSpentMinutes = 0
     await client.query('BEGIN');
 
     const examQuestions = await getQuestionsForScoring(client, examId);
-    const questionById = new Map(
-      examQuestions.map((question) => [question.id, question])
-    );
 
     const totalPossiblePoints = examQuestions.reduce((sum, question) => sum + question.points, 0);
     let totalPointsEarned = 0;
 
-    const gradedAnswers = answers.map((answer) => {
-      const dbQuestionId = toDbAnswerQuestionId(answer.question_id);
-      const question = questionById.get(dbQuestionId);
+    const gradedAnswers = examQuestions.map((question) => {
+      const dbQuestionId = question.id;
+      const clientAnswer = answers.find(
+        (a) => toDbAnswerQuestionId(a.question_id) === dbQuestionId
+      );
 
-      if (!question) {
-        const error = new Error('Question not found for this exam.');
-        error.statusCode = 400;
-        throw error;
-      }
-
+      const answerText = clientAnswer ? clientAnswer.answer.toString() : '';
       const isCorrect =
-        answer.answer.toString().trim().toLowerCase() ===
+        answerText.trim().toLowerCase() ===
         question.correct_answer.toString().trim().toLowerCase();
       const pointsEarned = isCorrect ? question.points : 0;
       totalPointsEarned += pointsEarned;
 
       return {
         question_id: dbQuestionId,
-        answer: answer.answer,
+        answer: answerText,
         is_correct: isCorrect,
         points_earned: pointsEarned,
       };
@@ -303,6 +297,17 @@ const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lec
     return null;
   }
 
+  const authCheck = await pool.query(
+    `SELECT e.lecturer_id FROM submissions s INNER JOIN exams e ON e.id = s.exam_id WHERE s.id = $1`,
+    [submissionId]
+  );
+  if (authCheck.rows.length === 0) return null;
+  if (authCheck.rows[0].lecturer_id !== toDbUserId(lecturerId)) {
+    const err = new Error('Not authorized to grade this submission');
+    err.statusCode = 403;
+    throw err;
+  }
+
   const client = await pool.connect();
 
   try {
@@ -310,10 +315,8 @@ const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lec
 
     const submissionResult = await client.query(
       `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
-              s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes,
-              e.lecturer_id
+              s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes
          FROM submissions s
-         INNER JOIN exams e ON e.id = s.exam_id
         WHERE s.id = $1
         FOR UPDATE OF s`,
       [submissionId]
@@ -323,10 +326,6 @@ const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lec
     if (!submission) {
       await client.query('ROLLBACK');
       return null;
-    }
-
-    if (submission.lecturer_id !== toDbUserId(lecturerId)) {
-      throw new Error('Not authorized to grade this submission');
     }
 
     const answerQuestionId = toDbQuestionId(questionId);
@@ -352,12 +351,15 @@ const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lec
       ? Math.round((nextTotalPointsEarned / submission.total_possible_points) * 100)
       : 0;
 
+    const isCorrect = cappedPointsEarned > 0 && cappedPointsEarned === answer.points;
+
     await client.query(
       `UPDATE submission_answers
           SET points_earned = $3,
               feedback = $4,
               graded_by = $5,
-              graded_at = CURRENT_TIMESTAMP
+              graded_at = CURRENT_TIMESTAMP,
+              is_correct = $6
         WHERE submission_id = $1 AND question_id = $2`,
       [
         submissionId,
@@ -365,6 +367,7 @@ const gradeAnswer = async (submissionId, questionId, pointsEarned, feedback, lec
         cappedPointsEarned,
         feedback,
         toDbUserId(lecturerId),
+        isCorrect,
       ]
     );
 

@@ -43,6 +43,9 @@ export function StudentTakeExamPage() {
       }
       
       setLoading(false);
+    }).catch(err => {
+      console.error('Failed to load exam data:', err);
+      setLoading(false);
     });
   }, [examId, user]);
 

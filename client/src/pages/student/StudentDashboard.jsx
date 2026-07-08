@@ -19,7 +19,7 @@ export function StudentDashboard() {
           setGradedCount(subsRes.data.filter((s) => s.status === SubmissionStatus.Graded).length);
         }
       },
-    );
+    ).catch(err => console.error('Failed to load dashboard data:', err));
   }, [user]);
 
   return (

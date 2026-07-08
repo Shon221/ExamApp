@@ -20,7 +20,7 @@ export function TeacherSubmissionsPage() {
         setExams(res.data);
         if (res.data.length) setSelectedExamId(res.data[0].id);
       }
-    });
+    }).catch(err => console.error('Failed to load exams:', err));
   }, [user]);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function TeacherSubmissionsPage() {
     ]).then(([subsRes, quesRes]) => {
       if (subsRes.success && subsRes.data) setSubmissions(subsRes.data);
       if (quesRes.success && quesRes.data) setQuestions(quesRes.data);
-    });
+    }).catch(err => console.error('Failed to load submissions:', err));
   }, [selectedExamId]);
 
   const handleGradeSave = async (submissionId, questionId, pointsEarned, feedback) => {
