@@ -61,15 +61,31 @@ export class StorageService {
   }
 
   getAccessToken() {
-    return this.get('exam_app_access_token');
+    return this.getToken('exam_app_access_token');
   }
 
   getRefreshToken() {
-    return this.get('exam_app_refresh_token');
+    return this.getToken('exam_app_refresh_token');
   }
 
   clearTokens() {
     this.remove('exam_app_access_token');
     this.remove('exam_app_refresh_token');
+  }
+
+  getToken(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null) return null;
+
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
+      }
+    } catch (error) {
+      this.logger.error('StorageService.getToken failed', { key, error });
+      return null;
+    }
   }
 }
