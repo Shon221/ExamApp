@@ -16,10 +16,15 @@ const lecturerRoutes = require('./routes/lecturer');
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 // ─── CORS Configuration ───────────────────────────────────────────────────────
 // Allow requests from the React frontend running on port 5173
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true, // Allow cookies / Authorization headers
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
