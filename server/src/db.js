@@ -1,21 +1,10 @@
 // src/db.js
-// PostgreSQL connection pool using the 'pg' library.
-// Connects to the database using DATABASE_URL from environment variables.
-//
-// NOTE: This file only establishes the connection pool.
-// All existing routes still use mockData (server/src/data/mockData.js).
-// The mockDB is kept as a backup / for local development.
-// This connection is currently used only by the health check route: GET /api/health/db
+// PostgreSQL connection pool using the shared database configuration.
 
 const { Pool } = require('pg');
+const { getPgConfig } = require('./dbConfig');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // SSL is required for Render's external PostgreSQL connections
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false,
-});
+const pool = new Pool(getPgConfig());
 
 // Log connection status on first connect
 pool.on('connect', () => {

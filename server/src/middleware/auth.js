@@ -13,13 +13,13 @@
 
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
-const mockData = require('../data/mockData');
+const authRepository = require('../repositories/authRepository');
 
 /**
  * Middleware to verify the JWT token.
  * Adds req.user = { id, email, role } if the token is valid.
  */
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   // Get the Authorization header value
   const authHeader = req.headers['authorization'];
 
@@ -39,8 +39,8 @@ const authenticate = (req, res, next) => {
     // If the token is expired or tampered with, this will throw an error
     const decoded = jwt.verify(token, env.jwtSecret);
 
-    // Find the user in our mock data to make sure they still exist
-    const user = mockData.users.find((u) => u.id === decoded.id);
+    // Find the user in PostgreSQL to make sure they still exist
+    const user = await authRepository.getUserById(decoded.id);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -51,10 +51,10 @@ const authenticate = (req, res, next) => {
     // Attach the decoded user payload to the request object
     // Now req.user is available in all subsequent middleware and controllers
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      name: decoded.name,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
     };
 
     next(); // Continue to the next middleware or controller

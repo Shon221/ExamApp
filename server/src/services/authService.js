@@ -10,8 +10,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const env = require('../config/env');
-const mockData = require('../data/mockData');
-const { generateId } = require('./idGenerator');
+const authRepository = require('../repositories/authRepository');
 
 // Number of bcrypt salt rounds (higher = more secure but slower)
 // 10 is a good balance for development
@@ -41,7 +40,7 @@ const comparePassword = async (password, hashedPassword) => {
  * The token contains: user id, email, role, name
  * It expires based on JWT_EXPIRES_IN in .env (e.g., '1h')
  *
- * @param {object} user - The user object from mockData
+ * @param {object} user - The user object
  * @returns {string} A signed JWT token string
  */
 const generateAccessToken = (user) => {
@@ -58,13 +57,13 @@ const generateAccessToken = (user) => {
 };
 
 /**
- * Generate a refresh token and store it in mockData.refreshTokens.
+ * Generate a refresh token and store it in PostgreSQL.
  * Refresh tokens are long-lived (e.g., 7 days) and used to get new access tokens.
  *
  * @param {object} user - The user object
  * @returns {string} A signed JWT refresh token string
  */
-const generateRefreshToken = (user) => {
+const generateRefreshToken = async (user) => {
   const payload = {
     id: user.id,
     type: 'refresh', // Extra field to distinguish from access tokens
@@ -74,13 +73,7 @@ const generateRefreshToken = (user) => {
     expiresIn: env.refreshTokenExpiresIn,
   });
 
-  // Store the refresh token in memory so we can invalidate it on logout
-  mockData.refreshTokens.push({
-    id: generateId(),
-    token: refreshToken,
-    userId: user.id,
-    created_at: new Date(),
-  });
+  await authRepository.storeRefreshToken(refreshToken, user.id);
 
   return refreshToken;
 };
@@ -90,13 +83,13 @@ const generateRefreshToken = (user) => {
  * @param {string} token - The refresh token string
  * @returns {{ decoded: object, storedToken: object } | null}
  */
-const verifyRefreshToken = (token) => {
+const verifyRefreshToken = async (token) => {
   try {
     // Verify the token signature and expiry
     const decoded = jwt.verify(token, env.jwtSecret);
 
     // Check that this token was stored (not revoked on logout)
-    const storedToken = mockData.refreshTokens.find((rt) => rt.token === token);
+    const storedToken = await authRepository.getRefreshToken(token);
 
     if (!storedToken) {
       return null; // Token was revoked
@@ -113,10 +106,7 @@ const verifyRefreshToken = (token) => {
  * @param {string} token - The refresh token to remove
  */
 const revokeRefreshToken = (token) => {
-  const index = mockData.refreshTokens.findIndex((rt) => rt.token === token);
-  if (index !== -1) {
-    mockData.refreshTokens.splice(index, 1);
-  }
+  return authRepository.deleteRefreshToken(token);
 };
 
 /**
