@@ -151,16 +151,30 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 -- ─── Safe migrations for existing databases ─────────────────────────────────
--- Adds expires_at to existing refresh_tokens table if the DB was created before this column existed.
-ALTER TABLE refresh_tokens
-ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+-- Adds expires_at to existing refresh_tokens table if the DB was created before
+-- this column existed. Wrapped in DO $$ so it is safe to run via runSchema.js.
+DO $$
+BEGIN
+    -- Step 1: Add column if missing (no-op if it already exists)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_name = 'refresh_tokens' AND column_name = 'expires_at'
+    ) THEN
+        ALTER TABLE refresh_tokens
+            ADD COLUMN expires_at TIMESTAMP;
+    END IF;
 
-UPDATE refresh_tokens
-SET expires_at = created_at + INTERVAL '7 days'
-WHERE expires_at IS NULL;
+    -- Step 2: Set a DEFAULT for future inserts
+    ALTER TABLE refresh_tokens
+        ALTER COLUMN expires_at SET DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days');
 
-ALTER TABLE refresh_tokens
-ALTER COLUMN expires_at SET DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days');
+    -- Step 3: Backfill any rows that still have NULL
+    UPDATE refresh_tokens
+       SET expires_at = created_at + INTERVAL '7 days'
+     WHERE expires_at IS NULL;
 
-ALTER TABLE refresh_tokens
-ALTER COLUMN expires_at SET NOT NULL;
+    -- Step 4: Enforce NOT NULL
+    ALTER TABLE refresh_tokens
+        ALTER COLUMN expires_at SET NOT NULL;
+END;
+$$;
