@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     token           TEXT NOT NULL UNIQUE,
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at      TIMESTAMP NOT NULL
+    expires_at      TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days')
 );
 
 -- ─── Indexes ────────────────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ CREATE INDEX IF NOT EXISTS idx_submission_answers_submission_id ON submission_an
 CREATE INDEX IF NOT EXISTS idx_drafts_student_exam ON drafts(student_id, exam_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 -- ─── Triggers ───────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -149,3 +149,18 @@ CREATE TRIGGER update_exams_updated_at
 BEFORE UPDATE ON exams
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+-- ─── Safe migrations for existing databases ─────────────────────────────────
+-- Adds expires_at to existing refresh_tokens table if the DB was created before this column existed.
+ALTER TABLE refresh_tokens
+ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+
+UPDATE refresh_tokens
+SET expires_at = created_at + INTERVAL '7 days'
+WHERE expires_at IS NULL;
+
+ALTER TABLE refresh_tokens
+ALTER COLUMN expires_at SET DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days');
+
+ALTER TABLE refresh_tokens
+ALTER COLUMN expires_at SET NOT NULL;
