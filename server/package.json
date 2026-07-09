@@ -7,6 +7,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "db:schema": "node scripts/runSchema.js",
+    "db:migrate": "node scripts/runMigration.js",
     "db:seed:exams": "node scripts/seedExams.js",
     "db:seed:questions": "node scripts/seedQuestions.js",
     "db:seed:auth": "node scripts/seedAuthUsers.js"

@@ -16,22 +16,33 @@ const logger = require('../utils/logger');
  * Express identifies error handlers by the 4-parameter signature.
  */
 const errorHandler = (err, req, res, next) => {
-  // Log the error details on the server (not sent to client)
+  // Always log the full error on the server side
   logger.error(`${err.message} | Route: ${req.method} ${req.originalUrl}`);
 
-  // If in development mode, also log the full stack trace
+  // In development, also log the full stack trace for easier debugging
   if (process.env.NODE_ENV === 'development') {
     console.error(err.stack);
   }
 
-  // Determine the status code
-  // Use err.statusCode if it was set, otherwise default to 500
+  // Determine the HTTP status code.
+  // Use err.statusCode if it was intentionally set (e.g. createError(404, ...)),
+  // otherwise fall back to 500.
   const statusCode = err.statusCode || 500;
 
-  // Send a clean, consistent error response to the client
+  // In production, never expose raw internal error messages (e.g. raw SQL errors)
+  // to the client for errors that don't have an explicit statusCode set.
+  // Only errors intentionally created with createError() carry a statusCode;
+  // unhandled DB / runtime errors do not, and their message may contain sensitive
+  // internals (column names, table names, stack details, etc.).
+  const isInternalError = !err.statusCode;
+  const clientMessage =
+    isInternalError && process.env.NODE_ENV === 'production'
+      ? 'Internal Server Error'
+      : err.message || 'Internal Server Error';
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: clientMessage,
   });
 };
 
