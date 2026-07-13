@@ -20,6 +20,7 @@ const LEGACY_EXAM_UUIDS = Object.entries(LEGACY_EXAM_IDS).reduce((acc, [legacyId
 }, {});
 
 const toApiUserId = (userId) => LEGACY_USER_UUIDS[userId] || userId;
+const toDbUserId  = (userId) => LEGACY_USER_IDS[userId]  || userId;
 const toApiExamId = (examId) => LEGACY_EXAM_UUIDS[examId] || examId;
 
 const toApiExam = (row) => {
@@ -63,13 +64,20 @@ const examSelect = `
     LEFT JOIN questions q ON q.exam_id = e.id
 `;
 
-const getPublishedExams = async () => {
+/**
+ * Return published exams the student has NOT yet submitted.
+ * Accepts studentId so we can filter out already-submitted exams.
+ */
+const getPublishedExams = async (studentId) => {
   const result = await pool.query(
     `${examSelect}
       WHERE e.status = $1
+        AND e.id NOT IN (
+          SELECT exam_id FROM submissions WHERE student_id = $2
+        )
       GROUP BY e.id
       ORDER BY e.created_at DESC`,
-    ['published']
+    ['published', toDbUserId(studentId)]
   );
 
   return result.rows.map(toApiExam);
