@@ -90,12 +90,14 @@ const mapSubmissionToClient = (serverSub) => {
   return {
     id: serverSub.id,
     examId: serverSub.exam_id,
+    examTitle: serverSub.exam_title || null,
     studentId: serverSub.student_id,
     answers: (serverSub.answers || []).map((a) => ({
       questionId: a.question_id,
       value: a.answer,
       isCorrect: a.is_correct,
       pointsEarned: a.points_earned,
+      feedback: a.feedback,
     })),
     score: serverSub.score,
     totalPointsEarned: serverSub.total_points_earned,
@@ -254,8 +256,10 @@ export class BackendApiService {
   async updateExam(examId, patch) {
     const res = await this.client.put(`/api/exams/${examId}`, mapExamToServer(patch));
     if (!res.success) {
+      this.notify.error(res.error || 'Failed to save exam');
       return { success: false, error: res.error };
     }
+    this.notify.success('Exam saved successfully');
     return { success: true, data: mapExamToClient(res.data.exam) };
   }
 
@@ -320,8 +324,10 @@ export class BackendApiService {
     }
 
     if (!res.success) {
+      this.notify.error(res.error || 'Failed to save question');
       return { success: false, error: res.error };
     }
+    this.notify.success('Question saved successfully');
     return { success: true, data: mapQuestionToClient(res.data.question) };
   }
 
@@ -336,8 +342,10 @@ export class BackendApiService {
     }
     const res = await this.client.delete(`/api/exams/${examId}/questions/${questionId}`);
     if (!res.success) {
+      this.notify.error(res.error || 'Failed to delete question');
       return { success: false, error: res.error };
     }
+    this.notify.success('Question removed');
     return { success: true, data: true };
   }
 
