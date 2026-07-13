@@ -36,7 +36,7 @@ export function StudentGradesPage() {
         <div className="card-grid">
           {submissions.map((submission) => (
             <article key={submission.id} className="card">
-              <h3>Exam: {submission.examId}</h3>
+              <h3>Exam: {submission.examTitle || submission.examId}</h3>
               <p className="card__meta">
                 Status: <span className={`badge badge--${submission.status}`}>{submission.status}</span>
               </p>
