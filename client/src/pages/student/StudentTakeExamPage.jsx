@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { QuestionType } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { BackendApiService } from '../../services';
+import { BackendApiService, NotifyService } from '../../services';
 
 export function StudentTakeExamPage() {
   const { examId } = useParams();
@@ -15,6 +15,8 @@ export function StudentTakeExamPage() {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const notify = NotifyService.getInstance();
   
   // Autosave status: '', 'Saving...', 'Saved', 'Failed to save'
   const [saveStatus, setSaveStatus] = useState('');
@@ -83,6 +85,8 @@ export function StudentTakeExamPage() {
   const handleSubmit = async () => {
     if (!confirm('Submit exam? You cannot change answers after submission.')) return;
 
+    setSubmitting(true);
+
     // Build answers array from the local state
     const answersPayload = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
@@ -93,6 +97,9 @@ export function StudentTakeExamPage() {
     if (res.success) {
       setSubmitted(true);
       navigate('/student/grades');
+    } else {
+      notify.error(res.error || 'Failed to submit exam. Please try again.');
+      setSubmitting(false);
     }
   };
 
@@ -113,8 +120,13 @@ export function StudentTakeExamPage() {
             </span>
           )}
           {!submitted && (
-            <button type="button" className="btn btn--primary" onClick={handleSubmit}>
-              Submit Exam
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit Exam'}
             </button>
           )}
         </div>
