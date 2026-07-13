@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SubmissionStatus } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 import { BackendApiService } from '../../services';
@@ -53,6 +54,14 @@ export function StudentGradesPage() {
               {submission.submittedAt && (
                 <p className="card__meta">Submitted: {new Date(submission.submittedAt).toLocaleString()}</p>
               )}
+              <div className="card__actions" style={{ marginTop: '0.75rem' }}>
+                <Link
+                  to={`/student/submissions/${submission.id}/review`}
+                  className="btn btn--sm btn--outline"
+                >
+                  Review Answers
+                </Link>
+              </div>
             </article>
           ))}
         </div>
