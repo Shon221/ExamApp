@@ -103,12 +103,21 @@ const questionSchema = Joi.object({
     'string.min': 'Question text is required',
     'any.required': 'Question text is required',
   }),
-  options: Joi.array().items(Joi.string()).min(2).when('type', {
+  options: Joi.when('type', {
     is: 'multiple-choice',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
+    then: Joi.array()
+      .items(Joi.string().trim().min(1).messages({ 'string.min': 'Options must not be blank' }))
+      .min(2)
+      .required()
+      .messages({
+        'array.min': 'Multiple-choice questions must have at least 2 non-empty options',
+        'any.required': 'Options are required for multiple-choice questions',
+      }),
+    otherwise: Joi.array().items(Joi.string()).optional(),
   }),
-  correct_answer: Joi.string().required().messages({
+  correct_answer: Joi.string().trim().min(1).required().messages({
+    'string.empty': 'Correct answer is required',
+    'string.min': 'Correct answer must not be blank',
     'any.required': 'Correct answer is required',
   }),
   order: Joi.number().integer().min(1).required().messages({
@@ -117,6 +126,28 @@ const questionSchema = Joi.object({
   points: Joi.number().min(1).max(100).required().messages({
     'any.required': 'Points value is required',
   }),
+}).custom((value, helpers) => {
+  // For multiple-choice: correct_answer must be one of the provided options
+  if (value.type === 'multiple-choice' && value.options && value.correct_answer) {
+    const cleanOptions = value.options.map((o) => o.trim());
+    if (!cleanOptions.includes(value.correct_answer.trim())) {
+      return helpers.error('any.invalid', {
+        message: `Correct answer must match one of the provided options: ${cleanOptions.join(', ')}`,
+      });
+    }
+  }
+  // For true-false: correct_answer must be 'true' or 'false'
+  if (value.type === 'true-false') {
+    const normalized = value.correct_answer?.trim().toLowerCase();
+    if (normalized !== 'true' && normalized !== 'false') {
+      return helpers.error('any.invalid', {
+        message: 'Correct answer for true/false questions must be "true" or "false"',
+      });
+    }
+  }
+  return value;
+}).messages({
+  'any.invalid': '{{#message}}',
 });
 
 /**
