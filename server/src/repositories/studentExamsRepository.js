@@ -108,9 +108,27 @@ const getPublishedExamQuestions = async (examId) => {
   return result.rows.map(toApiStudentQuestion);
 };
 
+/**
+ * Fetch questions for a submitted exam review.
+ * Works regardless of exam status (exam may have been unpublished after submission).
+ * correct_answer is intentionally excluded.
+ */
+const getReviewableQuestionsByExamId = async (examId) => {
+  const result = await pool.query(
+    `SELECT q.id, q.exam_id, q.type, q.text, q.options, q."order", q.points, q.created_at
+       FROM questions q
+      WHERE q.exam_id = $1
+      ORDER BY q."order" ASC`,
+    [toDbExamId(examId)]
+  );
+
+  return result.rows.map(toApiStudentQuestion);
+};
+
 module.exports = {
   getPublishedExams,
   getPublishedExamById,
   getExamStatusById,
   getPublishedExamQuestions,
+  getReviewableQuestionsByExamId,
 };
