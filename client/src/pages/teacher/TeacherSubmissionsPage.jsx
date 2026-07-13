@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { QuestionType, SubmissionStatus } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { BackendApiService } from '../../services';
+import { BackendApiService, NotifyService } from '../../services';
 
 export function TeacherSubmissionsPage() {
   const { user } = useAuth();
@@ -12,6 +12,7 @@ export function TeacherSubmissionsPage() {
   const [gradingSubmissionId, setGradingSubmissionId] = useState(null);
   
   const api = BackendApiService.getInstance();
+  const notify = NotifyService.getInstance();
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +41,8 @@ export function TeacherSubmissionsPage() {
     if (res.success && res.data) {
       // Update local submissions list with the updated submission
       setSubmissions((prev) => prev.map((s) => (s.id === submissionId ? res.data : s)));
+    } else {
+      notify.error(res.error || 'Failed to save grade. Please try again.');
     }
   };
 
