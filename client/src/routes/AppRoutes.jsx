@@ -12,6 +12,7 @@ import { StudentDashboard } from '../pages/student/StudentDashboard';
 import { StudentExamsPage } from '../pages/student/StudentExamsPage';
 import { StudentGradesPage } from '../pages/student/StudentGradesPage';
 import { StudentTakeExamPage } from '../pages/student/StudentTakeExamPage';
+import { StudentSubmissionReviewPage } from '../pages/student/StudentSubmissionReviewPage';
 import { useAuth } from '../hooks/useAuth';
 
 function HomeRedirect() {
@@ -45,6 +46,7 @@ export function AppRoutes() {
               <Route path="/student/exams" element={<StudentExamsPage />} />
               <Route path="/student/exams/:examId/take" element={<StudentTakeExamPage />} />
               <Route path="/student/grades" element={<StudentGradesPage />} />
+              <Route path="/student/submissions/:submissionId/review" element={<StudentSubmissionReviewPage />} />
             </Route>
           </Route>
         </Route>
