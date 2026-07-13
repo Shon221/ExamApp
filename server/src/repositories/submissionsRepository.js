@@ -59,6 +59,7 @@ const toApiSubmission = (row, answers = []) => {
   return {
     id: row.id,
     exam_id: toApiAnswerExamId(row.exam_id),
+    exam_title: row.exam_title || null,
     student_id: toApiUserId(row.student_id),
     answers,
     score: row.score,
@@ -130,11 +131,13 @@ const getSubmissionById = async (submissionId) => {
 
 const getSubmissionsByStudent = async (studentId) => {
   const result = await pool.query(
-    `SELECT id, exam_id, student_id, score, total_points_earned,
-            total_possible_points, status, submitted_at, time_spent_minutes
-       FROM submissions
-      WHERE student_id = $1
-      ORDER BY submitted_at DESC`,
+    `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
+            s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes,
+            e.title AS exam_title
+       FROM submissions s
+       LEFT JOIN exams e ON e.id = s.exam_id
+      WHERE s.student_id = $1
+      ORDER BY s.submitted_at DESC`,
     [toDbUserId(studentId)]
   );
 
@@ -165,7 +168,8 @@ const getSubmissionByStudentAndExam = async (studentId, examId) => {
 const getSubmissionsByLecturer = async (lecturerId) => {
   const result = await pool.query(
     `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
-            s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes
+            s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes,
+            e.title AS exam_title
        FROM submissions s
        INNER JOIN exams e ON e.id = s.exam_id
       WHERE e.lecturer_id = $1
@@ -179,11 +183,13 @@ const getSubmissionsByLecturer = async (lecturerId) => {
 
 const getSubmissionsByExam = async (examId) => {
   const result = await pool.query(
-    `SELECT id, exam_id, student_id, score, total_points_earned,
-            total_possible_points, status, submitted_at, time_spent_minutes
-       FROM submissions
-      WHERE exam_id = $1
-      ORDER BY submitted_at DESC`,
+    `SELECT s.id, s.exam_id, s.student_id, s.score, s.total_points_earned,
+            s.total_possible_points, s.status, s.submitted_at, s.time_spent_minutes,
+            e.title AS exam_title
+       FROM submissions s
+       LEFT JOIN exams e ON e.id = s.exam_id
+      WHERE s.exam_id = $1
+      ORDER BY s.submitted_at DESC`,
     [toDbExamId(examId)]
   );
 
