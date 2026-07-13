@@ -428,6 +428,24 @@ export class BackendApiService {
     return { success: true, data: mapSubmissionToClient(res.data.submission) };
   }
 
+  /**
+   * GET /api/student/submissions/:id/review
+   * Returns the submission with answers/scores AND the exam questions (no correct answers).
+   */
+  async getSubmissionReview(submissionId) {
+    const res = await this.client.get(`/api/student/submissions/${submissionId}/review`);
+    if (!res.success) {
+      return { success: false, error: res.error };
+    }
+    return {
+      success: true,
+      data: {
+        submission: mapSubmissionToClient(res.data.submission),
+        questions: (res.data.questions || []).map(mapQuestionToClient),
+      },
+    };
+  }
+
   // ─── Student Drafts ───────────────────────────────────────────────────────
 
   /**
