@@ -151,6 +151,39 @@ const getSubmissionById = async (req, res, next) => {
 };
 
 /**
+ * GET /api/student/submissions/:id/review
+ * Return a submitted exam for read-only review.
+ * Includes the student's answers + scores + feedback + questions (no correct answers).
+ * Submission must belong to the authenticated student.
+ */
+const getSubmissionReview = async (req, res, next) => {
+  try {
+    const submission = await submissionsRepository.getSubmissionById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Submission not found.' });
+    }
+
+    // Security: students can only review their own submissions
+    if (submission.student_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to review this submission.',
+      });
+    }
+
+    // Fetch questions for this exam — correct_answer intentionally excluded
+    const questions = await studentExamsRepository.getReviewableQuestionsByExamId(
+      submission.exam_id
+    );
+
+    return responseHandler.success(res, { submission, questions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * GET /api/student/exams/:id/draft
  * Get the saved draft for an exam.
  */
@@ -186,6 +219,7 @@ module.exports = {
   submitExam,
   getMySubmissions,
   getSubmissionById,
+  getSubmissionReview,
   getDraft,
   saveDraft,
 };
