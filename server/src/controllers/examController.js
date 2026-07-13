@@ -123,6 +123,7 @@ const deleteExam = async (req, res, next) => {
 /**
  * PATCH /api/exams/:id/status
  * Change the status of an exam (draft → published → archived).
+ * Publishing requires at least one question.
  */
 const updateExamStatus = async (req, res, next) => {
   try {
@@ -138,6 +139,18 @@ const updateExamStatus = async (req, res, next) => {
         success: false,
         message: 'You do not have permission to update this exam.',
       });
+    }
+
+    // Cannot publish an exam without questions
+    if (status === 'published') {
+      const questionsRepository = require('../repositories/questionsRepository');
+      const questions = await questionsRepository.getQuestionsByExam(req.params.id);
+      if (!questions || questions.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot publish an exam with no questions. Add at least one question first.',
+        });
+      }
     }
 
     const updatedExam = await examsRepository.updateExamStatus(req.params.id, status);
