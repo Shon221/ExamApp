@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExamStatus, QuestionType } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { BackendApiService } from '../../services';
+import { BackendApiService, NotifyService } from '../../services';
 
 const QUESTION_TYPES = [
   { value: QuestionType.MultipleChoice, label: 'Multiple Choice' },
@@ -23,6 +23,8 @@ export function TeacherExamEditorPage() {
   const [questions, setQuestions] = useState([]);
   const [currentExamId, setCurrentExamId] = useState(isNew ? null : examId ?? null);
   const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const notify = NotifyService.getInstance();
 
   useEffect(() => {
     if (isNew || !examId) return;
@@ -64,7 +66,12 @@ export function TeacherExamEditorPage() {
 
   const handleSaveExam = async (e) => {
     e.preventDefault();
-    await saveExam();
+    setSaving(true);
+    const result = await saveExam();
+    setSaving(false);
+    if (!result) {
+      notify.error('Failed to save exam. Please try again.');
+    }
   };
 
   const addQuestion = async () => {
@@ -131,8 +138,8 @@ export function TeacherExamEditorPage() {
           Description
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
         </label>
-        <button type="submit" className="btn btn--primary">
-          Save Exam
+        <button type="submit" className="btn btn--primary" disabled={saving}>
+          {saving ? 'Saving...' : 'Save Exam'}
         </button>
       </form>
 
