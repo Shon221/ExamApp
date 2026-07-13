@@ -34,6 +34,9 @@ router.post(
 // GET /api/student/submissions — View all of the student's submissions
 router.get('/submissions', ...studentOnly, studentController.getMySubmissions);
 
+// GET /api/student/submissions/:id/review — Read-only review of a submitted exam
+router.get('/submissions/:id/review', ...studentOnly, studentController.getSubmissionReview);
+
 // GET /api/student/submissions/:id — View a specific submission
 router.get('/submissions/:id', ...studentOnly, studentController.getSubmissionById);
 
