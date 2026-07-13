@@ -19,7 +19,7 @@ const logger = require('../utils/logger');
  */
 const getPublishedExams = async (req, res, next) => {
   try {
-    const exams = await studentExamsRepository.getPublishedExams();
+    const exams = await studentExamsRepository.getPublishedExams(req.user.id);
     return responseHandler.success(res, { exams });
   } catch (error) {
     next(error);
