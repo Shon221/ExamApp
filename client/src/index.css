@@ -183,8 +183,8 @@ input:focus, select:focus, textarea:focus {
 
 .badge--draft { background: #f1f5f9; color: #475569; }
 .badge--published { background: #d1fae5; color: #065f46; }
-.badge--closed { background: #fee2e2; color: #991b1b; }
-.badge--in_progress { background: #fef3c7; color: #92400e; }
+.badge--archived { background: #fee2e2; color: #991b1b; }
+.badge--in-progress { background: #fef3c7; color: #92400e; }
 .badge--submitted { background: #dbeafe; color: #1e40af; }
 .badge--graded { background: #d1fae5; color: #065f46; }
 

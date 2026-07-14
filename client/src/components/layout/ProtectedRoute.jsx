@@ -3,7 +3,11 @@ import { UserRole } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
 
 export function ProtectedRoute({ allowedRoles }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <p className="loading-text">Loading...</p>;
+  }
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;

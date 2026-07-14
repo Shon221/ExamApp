@@ -1,30 +1,20 @@
 import { useEffect, useState } from 'react';
-import { SubmissionStatus } from '../../entities';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService } from '../../services';
 
 export function StudentGradesPage() {
   const { user } = useAuth();
-  const [rows, setRows] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    const api = MockApiService.getInstance();
-    api.getSubmissionsByStudent(user.id).then(async (res) => {
-      if (!res.success || !res.data) {
-        setLoading(false);
-        return;
+    const api = BackendApiService.getInstance();
+    api.getSubmissionsByStudent(user.id).then((res) => {
+      if (res.success && res.data) {
+        setSubmissions(res.data);
       }
-      const graded = res.data.filter(
-        (s) => s.status === SubmissionStatus.Graded || s.status === SubmissionStatus.Submitted,
-      );
-      const enriched = [];
-      for (const sub of graded) {
-        const examRes = await api.getExam(sub.examId);
-        enriched.push({ submission: sub, exam: examRes.data });
-      }
-      setRows(enriched);
       setLoading(false);
     });
   }, [user]);
@@ -33,34 +23,74 @@ export function StudentGradesPage() {
     <div>
       <header className="page-header">
         <h1>My Grades</h1>
-        <p>View scores and instructor feedback</p>
+        <p>View your submitted exams, scores, and answers</p>
       </header>
 
       {loading ? (
         <p className="loading-text">Loading grades...</p>
-      ) : rows.length === 0 ? (
+      ) : submissions.length === 0 ? (
         <div className="empty-state">
-          <p>No submissions yet. Take an exam to see results here.</p>
+          <p>No submissions yet. Take an exam to see your results here.</p>
         </div>
       ) : (
         <div className="card-grid">
-          {rows.map(({ submission, exam }) => (
-            <article key={submission.id} className="card">
-              <h3>{exam?.title ?? submission.examId}</h3>
-              <p className="card__meta">
-                Status: <span className={`badge badge--${submission.status}`}>{submission.status}</span>
-              </p>
-              {submission.score !== undefined && (
-                <p className="grade-score">
-                  Score: <strong>{submission.score}</strong>
+          {submissions.map((submission) => {
+            const hasScore = submission.score != null;
+            const scoreColor = hasScore
+              ? submission.score >= 60 ? '#10b981' : '#ef4444'
+              : '#94a3b8';
+
+            return (
+              <article key={submission.id} className="card">
+                <h3>{submission.examTitle || 'Exam'}</h3>
+
+                {/* Score — big and clear */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  margin: '0.75rem 0',
+                }}>
+                  <span style={{
+                    fontSize: '2rem',
+                    fontWeight: 700,
+                    color: scoreColor,
+                    lineHeight: 1,
+                  }}>
+                    {hasScore ? `${submission.score}%` : '—'}
+                  </span>
+                  {submission.totalPointsEarned != null && (
+                    <span className="card__meta" style={{ fontSize: '0.9rem' }}>
+                      ({submission.totalPointsEarned} / {submission.totalPossiblePoints} pts)
+                    </span>
+                  )}
+                </div>
+
+                <p className="card__meta">
+                  Status:{' '}
+                  <span className={`badge badge--${submission.status}`}>
+                    {submission.status}
+                  </span>
                 </p>
-              )}
-              {submission.feedback && <p className="card__desc">{submission.feedback}</p>}
-              {submission.submittedAt && (
-                <p className="card__meta">Submitted: {new Date(submission.submittedAt).toLocaleString()}</p>
-              )}
-            </article>
-          ))}
+
+                {submission.submittedAt && (
+                  <p className="card__meta">
+                    Submitted: {new Date(submission.submittedAt).toLocaleString()}
+                  </p>
+                )}
+
+                {/* Primary CTA — review answers with per-question scores */}
+                <div className="card__actions" style={{ marginTop: '1rem' }}>
+                  <Link
+                    to={`/student/submissions/${submission.id}/review`}
+                    className="btn btn--sm btn--primary"
+                  >
+                    View Answers &amp; Scores
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

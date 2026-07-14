@@ -4,19 +4,19 @@ export const UserRole = {
 };
 
 export const QuestionType = {
-  MultipleChoice: 'multiple_choice',
-  TrueFalse: 'true_false',
-  OpenText: 'open_text',
+  MultipleChoice: 'multiple-choice',
+  TrueFalse: 'true-false',
+  OpenText: 'short-answer',
 };
 
 export const ExamStatus = {
   Draft: 'draft',
   Published: 'published',
-  Closed: 'closed',
+  Closed: 'archived',
 };
 
 export const SubmissionStatus = {
-  InProgress: 'in_progress',
+  InProgress: 'in-progress',
   Submitted: 'submitted',
   Graded: 'graded',
 };

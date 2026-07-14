@@ -1,80 +1,110 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { QuestionType, SubmissionStatus } from '../../entities';
+import { QuestionType } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { ConfigService, MockApiService } from '../../services';
+import { BackendApiService, NotifyService } from '../../services';
 
 export function StudentTakeExamPage() {
   const { examId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const api = MockApiService.getInstance();
-  const autoSaveMs = ConfigService.getInstance().get('examAutoSaveIntervalMs');
+  const api = BackendApiService.getInstance();
 
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [submission, setSubmission] = useState(null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const notify = NotifyService.getInstance();
+  
+  // Autosave status: '', 'Saving...', 'Saved', 'Failed to save'
+  const [saveStatus, setSaveStatus] = useState('');
+  const autosaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!examId || !user) return;
+    
+    // Load exam and draft in parallel
     Promise.all([
-      api.getExam(examId),
-      api.getQuestionsByExam(examId),
-      api.getOrCreateSubmission(examId, user.id),
-    ]).then(([examRes, qRes, subRes]) => {
-      if (examRes.success && examRes.data) setExam(examRes.data);
-      if (qRes.success && qRes.data) setQuestions(qRes.data);
-      if (subRes.success && subRes.data) {
-        setSubmission(subRes.data);
-        const map = {};
-        subRes.data.answers.forEach((a) => {
-          map[a.questionId] = Array.isArray(a.value) ? a.value.join(',') : String(a.value);
-        });
-        setAnswers(map);
+      api.getExamForStudent(examId),
+      api.getExamDraft(examId)
+    ]).then(([examRes, draftRes]) => {
+      if (examRes.success && examRes.data) {
+        setExam(examRes.data.exam);
+        setQuestions(examRes.data.questions);
       }
+      
+      if (draftRes.success && draftRes.data) {
+        // draftRes.data is array: [{ questionId, value }]
+        const draftAnswers = {};
+        draftRes.data.forEach(a => {
+          draftAnswers[a.questionId] = a.value;
+        });
+        setAnswers(draftAnswers);
+      }
+      
+      setLoading(false);
+    }).catch(err => {
+      console.error('Failed to load exam data:', err);
       setLoading(false);
     });
   }, [examId, user]);
 
-  useEffect(() => {
-    if (!submission || submission.status !== SubmissionStatus.InProgress) return;
-    const interval = setInterval(() => {
-      saveAnswers(false);
-    }, autoSaveMs);
-    return () => clearInterval(interval);
-  }, [submission, answers]);
-
-  const saveAnswers = async (showNotify = true) => {
-    if (!submission) return;
-    const payload = Object.entries(answers).map(([questionId, value]) => ({
+  const triggerAutosave = (newAnswers) => {
+    setSaveStatus('Saving...');
+    
+    const answersPayload = Object.entries(newAnswers).map(([questionId, value]) => ({
       questionId,
       value,
     }));
-    const res = await api.saveAnswers(submission.id, payload);
-    if (res.success && res.data) setSubmission(res.data);
-    if (showNotify && res.success) {
-      // auto-save is silent; NotifyService used on submit
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!submission) return;
-    if (!confirm('Submit exam? You cannot change answers after submission.')) return;
-    await saveAnswers(false);
-    const res = await api.submitExam(submission.id);
-    if (res.success) navigate('/student/grades');
+    
+    api.saveExamDraft(examId, answersPayload).then(res => {
+      if (res.success) {
+        setSaveStatus('Saved');
+      } else {
+        setSaveStatus('Failed to save');
+      }
+    });
   };
 
   const setAnswer = (questionId, value) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
+    
+    // Debounce autosave
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+    setSaveStatus('Saving...');
+    autosaveTimeoutRef.current = setTimeout(() => {
+      triggerAutosave(newAnswers);
+    }, 1000);
+  };
+
+  const handleSubmit = async () => {
+    if (!confirm('Submit exam? You cannot change answers after submission.')) return;
+
+    setSubmitting(true);
+
+    // Build answers array from the local state
+    const answersPayload = Object.entries(answers).map(([questionId, value]) => ({
+      questionId,
+      value,
+    }));
+
+    const res = await api.submitExam(examId, answersPayload);
+    if (res.success) {
+      setSubmitted(true);
+      navigate('/student/grades');
+    } else {
+      notify.error(res.error || 'Failed to submit exam. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   if (loading) return <p className="loading-text">Loading exam...</p>;
-  if (!exam || !submission) return <p>Exam not found.</p>;
-
-  const isSubmitted = submission.status !== SubmissionStatus.InProgress;
+  if (!exam) return <p>Exam not found.</p>;
 
   return (
     <div>
@@ -83,14 +113,26 @@ export function StudentTakeExamPage() {
           <h1>{exam.title}</h1>
           <p>{exam.durationMinutes} min · {questions.length} questions</p>
         </div>
-        {!isSubmitted && (
-          <button type="button" className="btn btn--primary" onClick={handleSubmit}>
-            Submit Exam
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {saveStatus && (
+            <span style={{ fontSize: '0.9rem', color: saveStatus === 'Failed to save' ? 'var(--color-danger)' : 'var(--color-text-light)' }}>
+              {saveStatus}
+            </span>
+          )}
+          {!submitted && (
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit Exam'}
+            </button>
+          )}
+        </div>
       </header>
 
-      {isSubmitted && (
+      {submitted && (
         <div className="alert alert--info">This exam has already been submitted.</div>
       )}
 
@@ -110,7 +152,7 @@ export function StudentTakeExamPage() {
                       value={opt}
                       checked={answers[q.id] === opt}
                       onChange={() => setAnswer(q.id, opt)}
-                      disabled={isSubmitted}
+                      disabled={submitted}
                     />
                     {opt}
                   </label>
@@ -127,7 +169,7 @@ export function StudentTakeExamPage() {
                       value={opt}
                       checked={answers[q.id] === opt}
                       onChange={() => setAnswer(q.id, opt)}
-                      disabled={isSubmitted}
+                      disabled={submitted}
                     />
                     {opt === 'true' ? 'True' : 'False'}
                   </label>
@@ -139,7 +181,7 @@ export function StudentTakeExamPage() {
                 value={answers[q.id] ?? ''}
                 onChange={(e) => setAnswer(q.id, e.target.value)}
                 rows={4}
-                disabled={isSubmitted}
+                disabled={submitted}
                 placeholder="Your answer..."
               />
             )}

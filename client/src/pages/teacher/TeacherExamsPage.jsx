@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExamStatus } from '../../entities';
 import { useAuth } from '../../hooks/useAuth';
-import { MockApiService } from '../../services';
+import { BackendApiService, NotifyService } from '../../services';
 
 export function TeacherExamsPage() {
   const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const api = MockApiService.getInstance();
+  const [actionLoading, setActionLoading] = useState(null); // examId of exam being acted on
+  const api = BackendApiService.getInstance();
+  const notify = NotifyService.getInstance();
 
   const loadExams = () => {
     if (!user) return;
@@ -22,14 +24,26 @@ export function TeacherExamsPage() {
   useEffect(loadExams, [user]);
 
   const handlePublish = async (examId) => {
-    await api.publishExam(examId);
-    loadExams();
+    setActionLoading(examId);
+    const res = await api.publishExam(examId);
+    setActionLoading(null);
+    if (res.success) {
+      loadExams();
+    } else {
+      notify.error(res.error || 'Failed to publish exam.');
+    }
   };
 
   const handleDelete = async (examId) => {
     if (!confirm('Delete this exam?')) return;
-    await api.deleteExam(examId);
-    loadExams();
+    setActionLoading(examId);
+    const res = await api.deleteExam(examId);
+    setActionLoading(null);
+    if (res.success) {
+      loadExams();
+    } else {
+      notify.error(res.error || 'Failed to delete exam.');
+    }
   };
 
   return (
@@ -68,12 +82,22 @@ export function TeacherExamsPage() {
                   Edit
                 </Link>
                 {exam.status === ExamStatus.Draft && (
-                  <button type="button" className="btn btn--sm btn--primary" onClick={() => handlePublish(exam.id)}>
-                    Publish
+                  <button
+                    type="button"
+                    className="btn btn--sm btn--primary"
+                    onClick={() => handlePublish(exam.id)}
+                    disabled={actionLoading === exam.id}
+                  >
+                    {actionLoading === exam.id ? 'Publishing...' : 'Publish'}
                   </button>
                 )}
-                <button type="button" className="btn btn--sm btn--danger" onClick={() => handleDelete(exam.id)}>
-                  Delete
+                <button
+                  type="button"
+                  className="btn btn--sm btn--danger"
+                  onClick={() => handleDelete(exam.id)}
+                  disabled={actionLoading === exam.id}
+                >
+                  {actionLoading === exam.id ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </article>

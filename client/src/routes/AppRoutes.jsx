@@ -12,10 +12,12 @@ import { StudentDashboard } from '../pages/student/StudentDashboard';
 import { StudentExamsPage } from '../pages/student/StudentExamsPage';
 import { StudentGradesPage } from '../pages/student/StudentGradesPage';
 import { StudentTakeExamPage } from '../pages/student/StudentTakeExamPage';
+import { StudentSubmissionReviewPage } from '../pages/student/StudentSubmissionReviewPage';
 import { useAuth } from '../hooks/useAuth';
 
 function HomeRedirect() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <p className="loading-text">Loading...</p>;
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
   return <Navigate to={user.role === UserRole.Teacher ? '/teacher' : '/student'} replace />;
 }
@@ -44,6 +46,7 @@ export function AppRoutes() {
               <Route path="/student/exams" element={<StudentExamsPage />} />
               <Route path="/student/exams/:examId/take" element={<StudentTakeExamPage />} />
               <Route path="/student/grades" element={<StudentGradesPage />} />
+              <Route path="/student/submissions/:submissionId/review" element={<StudentSubmissionReviewPage />} />
             </Route>
           </Route>
         </Route>

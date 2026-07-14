@@ -1,0 +1,83 @@
+// src/app.js
+// This file creates the Express application, sets up all middleware and routes.
+// It is separate from server.js so that in the future it can be tested independently.
+
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
+const errorHandler = require('./middleware/errorHandler');
+
+// Import all route files
+const authRoutes = require('./routes/auth');
+const examRoutes = require('./routes/exams');
+const questionRoutes = require('./routes/questions');
+const studentRoutes = require('./routes/student');
+const lecturerRoutes = require('./routes/lecturer');
+
+const app = express();
+
+const helmet = require('helmet');
+app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+// ─── CORS Configuration ───────────────────────────────────────────────────────
+// Allow requests from the React frontend running on port 5173
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true, // Allow cookies / Authorization headers
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// ─── Body Parsing Middleware ──────────────────────────────────────────────────
+// Parse incoming JSON request bodies (like { email, password })
+app.use(express.json());
+
+// Parse URL-encoded bodies (form submissions)
+app.use(express.urlencoded({ extended: true }));
+
+// Parse cookies
+app.use(cookieParser());
+
+// ─── Health Check ─────────────────────────────────────────────────────────────
+// Simple endpoint to verify the server is running
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── API Routes ───────────────────────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/exams', questionRoutes);     // nested: /api/exams/:examId/questions
+app.use('/api/student', studentRoutes);
+app.use('/api/lecturer', lecturerRoutes);
+
+// ─── Health Check Routes (PostgreSQL) ─────────────────────────────────────────
+// DB health check: GET /api/health/db
+// NOTE: The existing GET /api/health (above) is unchanged.
+const healthRoutes = require('./routes/healthRoutes');
+app.use('/api/health', healthRoutes);
+
+// ─── 404 Handler ─────────────────────────────────────────────────────────────
+// If no route matched, return a 404 error
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+  });
+});
+
+// ─── Centralized Error Handler ────────────────────────────────────────────────
+// Must be the LAST middleware (after all routes)
+app.use(errorHandler);
+
+module.exports = app;

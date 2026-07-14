@@ -52,4 +52,6 @@ export class StorageService {
     const sessionKey = ConfigService.getInstance().get('sessionKey');
     this.remove(sessionKey);
   }
+
+
 }

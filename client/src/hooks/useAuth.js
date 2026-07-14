@@ -3,12 +3,15 @@ import { AuthService } from '../services';
 
 export function useAuth() {
   const auth = AuthService.getInstance();
-  const [user, setUser] = useState(auth.getUser());
+  const [authState, setAuthState] = useState(auth.getAuthState());
 
-  useEffect(() => auth.subscribe(setUser), [auth]);
+  useEffect(() => auth.subscribe(setAuthState), [auth]);
+
+  const { user, isLoading } = authState;
 
   return {
     user,
+    isLoading,
     isAuthenticated: user !== null,
     isTeacher: user?.role === 'teacher',
     isStudent: user?.role === 'student',
